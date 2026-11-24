@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { AccessibilityInfo, Animated, Linking, Pressable, ScrollView, View } from 'react-native';
+import { AccessibilityInfo, Animated, Linking, Pressable, View } from 'react-native';
 import { randomUUID } from 'expo-crypto';
 import { useSession, useAction, useData } from './api';
 import {
@@ -7,7 +7,6 @@ import {
   Page,
   Card,
   Btn,
-  Chip,
   Check,
   Notice,
   Status,
@@ -16,6 +15,7 @@ import {
   LabelRow,
   s,
   colors,
+  spacing,
 } from './ui';
 import {
   dateLong,
@@ -32,7 +32,8 @@ export default function Doctor({ route, navigation }) {
   const profile = useData('/public/professionals/' + id),
     doc = profile.data;
   const [selected, setSelected] = useState(''),
-    [chosenDay, setDay] = useState(null);
+    [chosenDay, setDay] = useState(null),
+    [showAllDays, setShowAllDays] = useState(false);
   const maps = useAction();
   const services = (doc?.services || []).filter((v) => v.isActive !== false);
   const service =
@@ -63,6 +64,9 @@ export default function Doctor({ route, navigation }) {
     : days.includes(preferred)
       ? preferred
       : days[0];
+  const visibleDays = showAllDays || days.length <= 6
+    ? days
+    : days.slice(0, 6).includes(active) ? days.slice(0, 6) : [...days.slice(0, 5), active];
   const location = doc?.clinics.find((c) => c.id === service?.clinicId);
   function openMap(c) {
     maps.run(() => {
@@ -89,11 +93,11 @@ export default function Doctor({ route, navigation }) {
       {doc && (
         <>
           <Card>
-            <View style={s.row}>
-              <Avatar url={doc.photoUrl} name={doc.name} size={70} />
-              <View style={{ flex: 1 }}>
-                <T type="title">{doc.name}</T>
-                <T>{doc.specialty?.name}</T>
+            <View style={[s.row, { gap: spacing.md }]}>
+              <Avatar url={doc.photoUrl} name={doc.name} size={72} round />
+              <View style={{ flex: 1, minWidth: 0, gap: spacing.xs }}>
+                <T type="heading">{doc.name}</T>
+                <T color={colors.muted}>{doc.specialty?.name}</T>
               </View>
             </View>
             {doc.crm && (
@@ -103,33 +107,39 @@ export default function Doctor({ route, navigation }) {
                 </LabelRow>
               </View>
             )}
-            {doc.bio && <T>{doc.bio}</T>}
+            {doc.bio && <T color={colors.muted}>{doc.bio}</T>}
           </Card>
           <T type="heading">Locais de atendimento</T>
           {doc.clinics.map((c) => (
             <Card key={c.id}>
-              <LabelRow icon="MapPin">{c.name}</LabelRow>
-              <T>{[c.address, c.neighborhood, c.city].filter(Boolean).join(' · ')}</T>
+              <View style={[s.row, { alignItems: 'flex-start' }]}>
+                <Icon name="MapPin" size={20} />
+                <T type="bold" style={{ flex: 1 }}>{c.name}</T>
+              </View>
+              <T type="small" color={colors.muted}>{[c.address, c.neighborhood, c.city].filter(Boolean).join(' · ')}</T>
               <Btn kind="link" icon="Navigation" onPress={() => openMap(c)}>
                 Como chegar
               </Btn>
             </Card>
           ))}
           <Notice error>{maps.error}</Notice>
-          <T type="heading">Escolha o atendimento</T>
+          <T type="heading">1. Escolha o atendimento</T>
           {services.length === 0 && <Notice>Nenhum atendimento disponível.</Notice>}
           {services.map((v) => (
             <Pressable
               key={v.id}
               accessibilityRole="radio"
               accessibilityState={{ checked: service.id === v.id }}
-              style={[
+              style={({ pressed }) => [
                 s.card,
+                { padding: spacing.md, gap: spacing.sm },
                 service.id === v.id && { borderColor: colors.brand, backgroundColor: colors.soft },
+                { opacity: pressed ? 0.76 : 1 },
               ]}
               onPress={() => {
                 setSelected(v.id);
                 setDay(null);
+                setShowAllDays(false);
               }}
             >
               <View style={s.row}>
@@ -139,55 +149,72 @@ export default function Doctor({ route, navigation }) {
                 </T>
                 {service.id === v.id && <Icon name="Check" />}
               </View>
-              <T type="small">
-                {[
-                  modalityLabel[v.modality],
-                  v.durationMinutes + ' min',
-                  money(v.priceCents),
-                  doc.clinics.find((c) => c.id === v.clinicId)?.name,
-                ]
-                  .filter(Boolean)
-                  .join(' · ')}
-              </T>
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: spacing.sm }}>
+                <T type="small" color={colors.muted} style={{ flexShrink: 1 }}>
+                  {modalityLabel[v.modality]} · {v.durationMinutes} min
+                </T>
+                <T type="bold" style={{ flexShrink: 1, fontVariant: ['tabular-nums'] }}>{money(v.priceCents)}</T>
+              </View>
+              <T type="small" color={colors.muted}>{doc.clinics.find((c) => c.id === v.clinicId)?.name}</T>
             </Pressable>
           ))}
           {service && (
             <Card>
-              <T type="heading">Horários disponíveis</T>
+              <T type="heading">2. Escolha o horário</T>
+              <T type="small" color={colors.muted}>Horário de Recife (UTC−3).</T>
               <Status result={slots} />
               {days.length > 0 && (
                 <>
-                  <ScrollView
-                    horizontal
-                    showsHorizontalScrollIndicator={false}
-                    contentContainerStyle={{ gap: 8 }}
-                  >
-                    {days.map((d) => {
+                  <T type="bold">Dias disponíveis</T>
+                  <View style={s.wrap}>
+                    {visibleDays.map((d) => {
                       const iso = byDay[d][0].startsAt;
-                      const day =
-                        d === todayKey()
-                          ? 'Hoje'
-                          : d === tomorrowKey()
-                            ? 'Amanhã'
-                            : new Date(iso).toLocaleDateString('pt-BR', {
-                                timeZone: 'America/Recife',
-                                weekday: 'short',
-                                day: '2-digit',
-                                month: '2-digit',
-                              });
+                      const day = d === todayKey() ? 'Hoje' : d === tomorrowKey() ? 'Amanhã'
+                        : new Date(iso).toLocaleDateString('pt-BR', { timeZone: 'America/Recife', weekday: 'short' }).replace('.', '');
+                      const count = byDay[d].length;
+                      const selectedDay = d === active;
+                      const color = selectedDay ? 'white' : colors.ink;
                       return (
-                        <Chip key={d} active={d === active} onPress={() => setDay(d)}>
-                          {day + ' · ' + byDay[d].length}
-                        </Chip>
+                        <Pressable key={d} accessibilityRole="radio"
+                          accessibilityState={{ checked: selectedDay }}
+                          accessibilityLabel={dateLong(iso) + ', ' + count + (count === 1 ? ' horário disponível' : ' horários disponíveis')}
+                          onPress={() => setDay(d)}
+                          style={({ pressed }) => ({
+                            minWidth: 76, minHeight: 76, padding: spacing.sm, flexShrink: 1, gap: spacing.xs,
+                            alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderRadius: 12,
+                            borderColor: selectedDay ? colors.brand : colors.line,
+                            backgroundColor: selectedDay ? colors.brand : colors.card,
+                            opacity: pressed ? 0.76 : 1,
+                          })}
+                        >
+                          <T type="small" color={selectedDay ? 'white' : colors.muted}>{day}</T>
+                          <T type="heading" color={color} style={{ fontVariant: ['tabular-nums'] }}>{d.slice(8)}/{d.slice(5, 7)}</T>
+                          <T type="small" color={selectedDay ? 'white' : colors.muted}>{count} {count === 1 ? 'vaga' : 'vagas'}</T>
+                        </Pressable>
                       );
                     })}
-                  </ScrollView>
-                  <T>{dateLong(byDay[active][0].startsAt)}</T>
+                  </View>
+                  {days.length > 6 && (
+                    <Btn kind="link" onPress={() => setShowAllDays((value) => !value)}>
+                      {showAllDays ? 'Mostrar menos datas' : 'Ver todas as datas (' + days.length + ')'}
+                    </Btn>
+                  )}
+                  <View style={{ height: 1, backgroundColor: colors.line, marginVertical: spacing.xs }} />
+                  <T type="bold">{dateLong(byDay[active][0].startsAt)}</T>
+                  <T type="small" color={colors.muted}>Toque em um horário para revisar a consulta.</T>
                   <View style={s.wrap}>
                     {byDay[active].map((slot) => (
-                      <Chip key={slot.id} onPress={() => review(slot)}>
-                        {time(slot.startsAt)}
-                      </Chip>
+                      <Pressable key={slot.id} accessibilityRole="button"
+                        accessibilityLabel={'Agendar às ' + time(slot.startsAt)}
+                        onPress={() => review(slot)}
+                        style={({ pressed }) => ({
+                          minWidth: 72, minHeight: 44, paddingHorizontal: spacing.md, paddingVertical: spacing.sm,
+                          borderWidth: 1, borderColor: colors.brand, borderRadius: 9, backgroundColor: pressed ? colors.soft : colors.card,
+                          alignItems: 'center', justifyContent: 'center',
+                        })}
+                      >
+                        <T type="bold" color={colors.brand} style={{ fontVariant: ['tabular-nums'] }}>{time(slot.startsAt)}</T>
+                      </Pressable>
                     ))}
                   </View>
                 </>
