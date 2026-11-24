@@ -29,7 +29,7 @@ export default function Teleconsultation({ appointment }) {
     try {
       const res = await call('/appointments/' + appointment.id + '/teleconsultation', { method: 'POST' });
       const link = res.data.url;
-      if (!/^https:\/\/[a-z0-9-]+\.daily\.co\/lh-[a-f0-9]{40}\?t=/i.test(link)) throw Error('Sala de vídeo inválida.');
+      if (typeof link !== 'string' || !/^https:\/\/meet\.livekit\.io\/custom\?/.test(link)) throw Error('Sala de vídeo inválida.');
       if (attempt !== generation.current) return;
       if (external) await Linking.openURL(link);
       else setUrl(link);
