@@ -58,7 +58,7 @@ true;
 `;
 
 function mapUrl(latitude, longitude) {
-  const bbox = [longitude - 0.006, latitude - 0.004, longitude + 0.006, latitude + 0.004]
+  const bbox = [longitude - 0.003, latitude - 0.002, longitude + 0.003, latitude + 0.002]
     .map((n) => n.toFixed(5)).join(',');
   return MAP_ORIGIN + '/export/embed.html?bbox=' + bbox + '&layer=mapnik&marker='
     + latitude.toFixed(5) + ',' + longitude.toFixed(5);
