@@ -1,9 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
+import legal from './legal.json';
 import { Linking, View, useWindowDimensions } from 'react-native';
 import { useSession, useData, useAction } from './api';
-import { T, Page, Card, Btn, Notice, Status, Avatar, Check, LabelRow, s, colors, spacing } from './ui';
+import { T, Page, Card, Btn, Notice, Status, Avatar, Check, LabelRow, Sheet, s, colors, spacing } from './ui';
 import { dateTime, dateShort, formatNotificationMessage } from './format';
 export function Profile({ navigation }) {
+  const [privacyOpen, setPrivacyOpen] = useState(false);
   const { width, fontScale } = useWindowDimensions();
   const { user, end, large, toggleSize, call } = useSession(),
     prefs = useData('/privacy/notification-preferences'),
@@ -59,9 +61,18 @@ export function Profile({ navigation }) {
           ))}
         <Notice error>{action.error}</Notice>
       </Card>
+      <Btn kind="outline" icon="ShieldCheck" onPress={() => setPrivacyOpen(true)}>
+        Política de Privacidade
+      </Btn>
       <Btn kind="outline" icon="LogOut" onPress={end}>
         Sair da conta
       </Btn>
+      <Sheet title="Política de Privacidade" visible={privacyOpen} onClose={() => setPrivacyOpen(false)}>
+        {legal['Política de Privacidade'].map((line, i) => (
+          <T key={i} type={line.heading ? 'bold' : 'body'}>{line.text}</T>
+        ))}
+        <Btn onPress={() => setPrivacyOpen(false)}>Fechar</Btn>
+      </Sheet>
     </Page>
   );
 }

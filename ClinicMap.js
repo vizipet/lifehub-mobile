@@ -75,7 +75,6 @@ export default function ClinicMap({ name, latitude, longitude, onDirections, dir
     <View style={{ gap: spacing.sm }}>
       {uri && failedUri !== uri && (
         <>
-          <T type="small" color={colors.muted}>Mapa externo · OpenStreetMap recebe seu IP.</T>
           <View style={{ height: 180, width: '100%', borderRadius: 10, overflow: 'hidden',
             backgroundColor: colors.soft }}>
             <WebView

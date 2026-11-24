@@ -132,7 +132,7 @@
     },
     {
       "heading": false,
-      "text": "O médico que você escolheu vê apenas o nome e a idade do paciente e os dados da consulta. Ele não vê CPF, data de nascimento nem os demais dependentes. Não vendemos nem compartilhamos dados com terceiros."
+      "text": "O médico que você escolheu vê apenas o nome e a idade do paciente e os dados da consulta. Ele não vê CPF, data de nascimento nem os demais dependentes. Não vendemos dados pessoais. O carregamento de mapas utiliza um serviço externo, descrito na seção 8."
     },
     {
       "heading": true,
@@ -212,15 +212,11 @@
     },
     {
       "heading": false,
-      "text": "• Mapa permitido (lifehub.mapaPermitido): lembra que você pediu para ver os mapas, para não perguntar de novo."
-    },
-    {
-      "heading": false,
       "text": "• Arquivos do app (cache do aplicativo): telas, imagens e fontes, para o LifeHub abrir mais rápido. Nenhum dado pessoal ou de saúde fica nesse cache."
     },
     {
       "heading": false,
-      "text": "As fontes e as fotos são servidas pelo próprio LifeHub. Só dois serviços de fora são usados, e nenhum deles recebe dados da sua conta: o ViaCEP, quando um médico digita o CEP do consultório (só esse número é enviado), e o OpenStreetMap, que desenha o mapa da clínica. O mapa só é carregado depois que você clica em \"Mostrar mapa\", porque o OpenStreetMap recebe o endereço IP de quem o abre."
+      "text": "No aplicativo móvel, o mapa da clínica é carregado automaticamente pelo OpenStreetMap ao abrir o perfil de um médico. O serviço externo recebe o endereço IP público da conexão, dados técnicos de acesso e as coordenadas da região do mapa solicitado. O LifeHub não solicita a localização GPS do paciente para exibir esse mapa nem envia nome, CPF, senha, dados da conta ou dados da consulta ao serviço. A opção Como chegar abre o Google Maps, sujeito à política de privacidade desse serviço. Consulte a política do OpenStreetMap em https://osmfoundation.org/wiki/Privacy_Policy."
     },
     {
       "heading": false,
