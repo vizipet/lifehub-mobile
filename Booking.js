@@ -21,6 +21,7 @@ import {
 } from './ui';
 import {
   dateLong,
+  dateShort,
   time,
   money,
   modalityLabel,
@@ -58,13 +59,35 @@ function BookingGrid({ children, minCellWidth }) {
     </View>
   );
 }
+// Group and sort the server-provided availability in Recife local time.
+function periodsForDay(slots) {
+  const groups = [
+    { name: 'Manhã', slots: [] },
+    { name: 'Tarde', slots: [] },
+    { name: 'Noite', slots: [] },
+  ];
+  for (const slot of [...slots].sort((a, b) => Date.parse(a.startsAt) - Date.parse(b.startsAt))) {
+    const hour = Number(time(slot.startsAt).split(':')[0]);
+    groups[hour < 12 ? 0 : hour < 18 ? 1 : 2].slots.push(slot);
+  }
+  return groups.filter((group) => group.slots.length);
+}
+function resolveSelectedSlot(selection, professionalId, serviceId, activeDay, slots, now = Date.now()) {
+  if (!selection || selection.professionalId !== professionalId ||
+      selection.serviceId !== serviceId || selection.day !== activeDay) return null;
+  return slots.find((slot) => slot.id === selection.id && Date.parse(slot.startsAt) > now) || null;
+}
 export default function Doctor({ route, navigation }) {
   const { id, clinic, serviceId, preferredDay } = route.params;
   const profile = useData('/public/professionals/' + id),
     doc = profile.data;
   const [selected, setSelected] = useState(''),
     [chosenDay, setDay] = useState(null),
-    [showAllDays, setShowAllDays] = useState(false);
+    [showAllDays, setShowAllDays] = useState(false),
+    [slotChoice, setSlotChoice] = useState(null);
+  const { width, fontScale } = useWindowDimensions();
+  const appScale = useContext(FontScale);
+  const stacked = width < 350 || fontScale * appScale > 1.3;
   const maps = useAction();
   const services = (doc?.services || []).filter((v) => v.isActive !== false);
   const service =
@@ -99,6 +122,9 @@ export default function Doctor({ route, navigation }) {
     ? days
     : days.slice(0, 6).includes(active) ? days.slice(0, 6) : [...days.slice(0, 5), active];
   const location = doc?.clinics.find((c) => c.id === service?.clinicId);
+  const daySlots = byDay[active] || [];
+  const selectedSlot = resolveSelectedSlot(slotChoice, id, service?.id, active, daySlots);
+  const periods = periodsForDay(daySlots);
   function openMap(c) {
     maps.run(() => {
       const q =
@@ -111,6 +137,8 @@ export default function Doctor({ route, navigation }) {
     });
   }
   function review(slot) {
+    if (!slot || !doc || !service || slots.error ||
+        !resolveSelectedSlot(slotChoice, id, service.id, active, daySlots)) return;
     navigation.navigate('Revisar', {
       professional: { id, name: doc.name },
       service,
@@ -119,40 +147,49 @@ export default function Doctor({ route, navigation }) {
     });
   }
   return (
+    <View style={s.page}>
     <Page>
       <Status result={profile} />
       {doc && (
         <>
-          <Card>
-            <View style={[s.row, { gap: spacing.md }]}>
-              <Avatar url={doc.photoUrl} name={doc.name} size={72} round />
-              <View style={{ flex: 1, minWidth: 0, gap: spacing.xs }}>
-                <T type="heading">{doc.name}</T>
-                <T color={colors.muted}>{doc.specialty?.name}</T>
+          <Card style={{ gap: spacing.lg }}>
+            <View style={[s.row, { gap: spacing.md }, stacked && { flexDirection: 'column', alignItems: 'flex-start' }]}>
+              <Avatar url={doc.photoUrl} name={doc.name} size={88} round />
+              <View style={{ flex: stacked ? undefined : 1, minWidth: 0, alignSelf: 'stretch', justifyContent: 'center', gap: spacing.xs }}>
+                <T type="heading" style={{ fontSize: 23 * appScale }}>{doc.name}</T>
+                {!!doc.specialty?.name && <T type="bold" color={colors.brand}>{doc.specialty.name}</T>}
               </View>
             </View>
-            {doc.crm && (
-              <View style={s.soft}>
-                <LabelRow icon="ShieldCheck">
+            {!!doc.crm && (
+              <View style={{ alignSelf: 'flex-start', maxWidth: '100%', flexDirection: 'row',
+                alignItems: 'center', gap: spacing.xs, backgroundColor: colors.soft,
+                paddingHorizontal: spacing.sm, paddingVertical: spacing.sm, borderRadius: 8 }}>
+                <Icon name="ShieldCheck" size={17} />
+                <T type="small" color={colors.brand} style={{ flexShrink: 1 }}>
                   CRM {doc.crm}/{doc.crmState} · registro conferido
-                </LabelRow>
+                </T>
               </View>
             )}
             {!!doc.bio?.trim() && (
               <View style={{ borderTopWidth: 1, borderColor: colors.line, paddingTop: spacing.md, gap: spacing.sm }}>
                 <T type="heading">Sobre o profissional</T>
-                <T>{doc.bio}</T>
+                <T style={{ lineHeight: 24 * appScale }}>{doc.bio}</T>
               </View>
             )}
           </Card>
           <T type="heading">Locais de atendimento</T>
           {doc.clinics.map((c) => (
             <Card key={c.id}>
-              <View style={[s.row, { alignItems: 'flex-start' }]}>
-                <Icon name="MapPin" size={20} />
-                <T type="bold" style={{ flex: 1 }}>{c.name}</T>
+              <View style={[s.row, { alignItems: 'flex-start', gap: spacing.sm }]}>
+                <Icon name="MapPin" size={22} />
+                <View style={{ flex: 1, minWidth: 0, gap: spacing.xs }}>
+                  <T type="bold">{c.name}</T>
+                  {!!c.address && <T color={colors.ink}>{c.address}</T>}
+                  {!!(c.neighborhood || c.city) && (
+                    <T type="small" color={colors.muted}>{[c.neighborhood, c.city].filter(Boolean).join(' · ')}</T>
+                  )}
+                </View>
               </View>
-              <T type="small" color={colors.muted}>{[c.address, c.neighborhood, c.city].filter(Boolean).join(' · ')}</T>
               <ClinicMap
                 name={c.name}
                 latitude={c.latitude}
@@ -177,8 +214,10 @@ export default function Doctor({ route, navigation }) {
                 { opacity: pressed ? 0.76 : 1 },
               ]}
               onPress={() => {
+                if (service.id === v.id) return;
                 setSelected(v.id);
                 setDay(null);
+                setSlotChoice(null);
                 setShowAllDays(false);
               }}
             >
@@ -187,15 +226,30 @@ export default function Doctor({ route, navigation }) {
                 <T type="bold" style={{ flex: 1 }}>
                   {v.name}
                 </T>
-                {service.id === v.id && <Icon name="Check" />}
+                <View style={{ width: 24, height: 24, borderRadius: 12, borderWidth: 1,
+                  borderColor: service.id === v.id ? colors.brand : colors.muted,
+                  backgroundColor: service.id === v.id ? colors.brand : colors.card,
+                  alignItems: 'center', justifyContent: 'center' }}>
+                  {service.id === v.id && <Icon name="Check" size={17} color="white" />}
+                </View>
               </View>
-              <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: spacing.sm }}>
-                <T type="small" color={colors.muted} style={{ flexShrink: 1 }}>
-                  {modalityLabel[v.modality]} · {v.durationMinutes} min
-                </T>
-                <T type="bold" style={{ flexShrink: 1, fontVariant: ['tabular-nums'] }}>{money(v.priceCents)}</T>
+              <View style={{ flexDirection: stacked ? 'column' : 'row', flexWrap: 'wrap',
+                justifyContent: 'space-between', alignItems: stacked ? 'flex-start' : 'center', gap: spacing.sm }}>
+                <View style={{ flexShrink: 1, gap: spacing.xs }}>
+                  <T type="small" color={colors.muted}>{modalityLabel[v.modality]}</T>
+                  <View style={[s.row, { gap: spacing.xs }]}>
+                    <Icon name="Clock" size={15} color={colors.muted} />
+                    <T type="small" color={colors.muted} style={{ flexShrink: 1 }}>{v.durationMinutes} minutos</T>
+                  </View>
+                </View>
+                <T type="heading" color={colors.brand} style={{ flexShrink: 1, fontVariant: ['tabular-nums'] }}>{money(v.priceCents)}</T>
               </View>
-              <T type="small" color={colors.muted}>{doc.clinics.find((c) => c.id === v.clinicId)?.name}</T>
+              {!!doc.clinics.find((c) => c.id === v.clinicId)?.name && (
+                <View style={[s.row, { borderTopWidth: 1, borderTopColor: colors.line, paddingTop: spacing.sm, gap: spacing.xs }]}>
+                  <Icon name="MapPin" size={16} color={colors.muted} />
+                  <T type="small" color={colors.muted} style={{ flex: 1 }}>{doc.clinics.find((c) => c.id === v.clinicId)?.name}</T>
+                </View>
+              )}
             </Pressable>
           ))}
           {service && (
@@ -218,7 +272,10 @@ export default function Doctor({ route, navigation }) {
                         <Pressable key={d} accessibilityRole="radio"
                           accessibilityState={{ checked: selectedDay }}
                           accessibilityLabel={dateLong(iso) + ', ' + count + (count === 1 ? ' horário disponível' : ' horários disponíveis')}
-                          onPress={() => setDay(d)}
+                          onPress={() => {
+                            if (d !== active) setSlotChoice(null);
+                            setDay(d);
+                          }}
                           style={({ pressed }) => ({
                             minHeight: 80, paddingHorizontal: spacing.xs, paddingVertical: spacing.sm, gap: spacing.xs,
                             alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderRadius: 12,
@@ -257,22 +314,40 @@ export default function Doctor({ route, navigation }) {
                   )}
                   <View style={{ height: 1, backgroundColor: colors.line, marginVertical: spacing.xs }} />
                   <T type="bold">{dateLong(byDay[active][0].startsAt)}</T>
-                  <T type="small" color={colors.muted}>Toque em um horário para revisar a consulta.</T>
-                  <BookingGrid minCellWidth={76}>
-                    {byDay[active].map((slot) => (
-                      <Pressable key={slot.id} accessibilityRole="button"
-                        accessibilityLabel={'Agendar às ' + time(slot.startsAt)}
-                        onPress={() => review(slot)}
-                        style={({ pressed }) => ({
-                          minHeight: 48, paddingHorizontal: spacing.xs, paddingVertical: spacing.sm,
-                          borderWidth: 1, borderColor: colors.brand, borderRadius: 9, backgroundColor: pressed ? colors.soft : colors.card,
-                          alignItems: 'center', justifyContent: 'center',
+                  <T type="small" color={colors.muted}>Selecione um horário e toque em Continuar.</T>
+                  {periods.map((period, index) => (
+                    <View key={period.name} style={{ gap: spacing.sm,
+                      ...(index > 0 ? { borderTopWidth: 1, borderTopColor: colors.line, paddingTop: spacing.md, marginTop: spacing.xs } : {}) }}>
+                      <View style={[s.row, { flexWrap: 'wrap', gap: spacing.xs }]}>
+                        <Icon name="Clock" size={17} />
+                        <T type="bold" style={{ flex: 1 }}>{period.name}</T>
+                        <T type="small" color={colors.muted}>{period.slots.length} {period.slots.length === 1 ? 'horário' : 'horários'}</T>
+                      </View>
+                      <BookingGrid minCellWidth={76}>
+                        {period.slots.map((slot) => {
+                          const isSelected = selectedSlot?.id === slot.id;
+                          const unavailable = Date.parse(slot.startsAt) <= Date.now();
+                          return (
+                            <Pressable key={slot.id} accessibilityRole="radio"
+                              accessibilityState={{ checked: isSelected, disabled: unavailable }}
+                              accessibilityLabel={'Horário das ' + time(slot.startsAt)}
+                              disabled={unavailable}
+                              onPress={() => setSlotChoice({ id: slot.id, professionalId: id, serviceId: service.id, day: active })}
+                              style={({ pressed }) => ({
+                                minHeight: 48, paddingHorizontal: spacing.xs, paddingVertical: spacing.sm,
+                                borderWidth: 1, borderColor: unavailable ? colors.line : colors.brand, borderRadius: 9,
+                                backgroundColor: isSelected ? colors.brand : pressed ? colors.soft : colors.card,
+                                opacity: unavailable ? 0.5 : 1,
+                                alignItems: 'center', justifyContent: 'center',
+                              })}
+                            >
+                              <T type="bold" color={isSelected ? 'white' : colors.brand} style={{ fontVariant: ['tabular-nums'] }}>{time(slot.startsAt)}</T>
+                            </Pressable>
+                          );
                         })}
-                      >
-                        <T type="bold" color={colors.brand} style={{ fontVariant: ['tabular-nums'] }}>{time(slot.startsAt)}</T>
-                      </Pressable>
-                    ))}
-                  </BookingGrid>
+                      </BookingGrid>
+                    </View>
+                  ))}
                 </>
               )}
               {slots.data?.length === 0 && (
@@ -283,6 +358,25 @@ export default function Doctor({ route, navigation }) {
         </>
       )}
     </Page>
+    {!!service && (
+      <View style={{ backgroundColor: colors.card, borderTopWidth: 1, borderTopColor: colors.line }}>
+        <View style={{ width: '100%', maxWidth: 720, alignSelf: 'center', paddingHorizontal: spacing.lg,
+          paddingVertical: spacing.md, gap: spacing.sm, flexDirection: stacked ? 'column' : 'row',
+          alignItems: stacked ? 'stretch' : 'center' }}>
+          <View style={{ flex: stacked ? undefined : 1, minWidth: 0, gap: spacing.xs }}>
+            <T type="small" color={colors.muted} accessibilityLiveRegion="polite">
+              {selectedSlot ? dateShort(selectedSlot.startsAt).slice(0, 5) + ' às ' + time(selectedSlot.startsAt) : 'Selecione um horário'}
+            </T>
+            <T type="heading" style={{ fontVariant: ['tabular-nums'] }}>{money(service.priceCents)}</T>
+          </View>
+          <Btn disabled={!selectedSlot || !!slots.error} onPress={() => review(selectedSlot)}
+            style={{ minHeight: 48, ...(stacked ? {} : { flexShrink: 1, minWidth: 116 }) }}>
+            Continuar
+          </Btn>
+        </View>
+      </View>
+    )}
+    </View>
   );
 }
 export function Review({ navigation, route }) {
