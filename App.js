@@ -17,6 +17,7 @@ import Agenda from './Agenda';
 import Doctor, { Review, Success } from './Booking';
 import { Profile, Notifications, Campaigns } from './Account';
 import Family from './Family';
+import { useDevNavigation } from './devNavigation';
 const Stack = createNativeStackNavigator();
 const tabIcons = {
   Início: 'House',
@@ -184,6 +185,7 @@ function Header({ navigation, back, route }) {
 export default function App() {
   const account = useAccount(),
     [large, setLarge] = useState(false);
+  const devNavigation = useDevNavigation(account.user?.id, account.restoring);
   return (
     <SafeAreaProvider>
       <SafeAreaView
@@ -193,7 +195,7 @@ export default function App() {
         <StatusBar barStyle="dark-content" />
         <Session.Provider value={{ ...account, large, toggleSize: () => setLarge((x) => !x) }}>
           <FontScale.Provider value={large ? 1.16 : 1}>
-            {account.restoring ? (
+            {account.restoring || !devNavigation.ready ? (
               <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: spacing.xl, gap: spacing.lg }}>
                 <Logo width={180} />
                 {account.restoreError ? (
@@ -210,7 +212,11 @@ export default function App() {
                 )}
               </View>
             ) : (
-            <NavigationContainer>
+            <NavigationContainer
+              key={account.user?.id || 'public'}
+              initialState={devNavigation.initialState}
+              onStateChange={devNavigation.onStateChange}
+            >
               <Stack.Navigator
                 screenOptions={{
                   header: (props) => <Header {...props} />,
