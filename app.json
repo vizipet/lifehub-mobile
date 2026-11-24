@@ -1,0 +1,11 @@
+{
+  "expo": {
+    "name": "LifeHub",
+    "slug": "lifehub-mobile",
+    "version": "1.0.0",
+    "userInterfaceStyle": "light",
+    "android": {
+      "package": "br.lifehub.academico"
+    }
+  }
+}

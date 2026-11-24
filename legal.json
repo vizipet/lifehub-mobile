@@ -1,0 +1,280 @@
+{
+  "Termos de Uso": [
+    {
+      "heading": true,
+      "text": "1. O que é o LifeHub"
+    },
+    {
+      "heading": false,
+      "text": "O LifeHub é uma plataforma para encontrar médicos com CRM verificado e agendar consultas presenciais ou por vídeo, para você e para seus dependentes. O LifeHub não presta atendimento médico e não substitui o atendimento de emergência."
+    },
+    {
+      "heading": true,
+      "text": "2. Emergências"
+    },
+    {
+      "heading": false,
+      "text": "Em caso de emergência, ligue para o SAMU (192) ou procure a UPA ou o pronto-socorro mais próximo. Não use o LifeHub para situações urgentes."
+    },
+    {
+      "heading": true,
+      "text": "3. Sua conta"
+    },
+    {
+      "heading": false,
+      "text": "• Você deve informar dados verdadeiros, incluindo nome, CPF e data de nascimento."
+    },
+    {
+      "heading": false,
+      "text": "• A senha é pessoal. Após 5 tentativas erradas, a conta fica bloqueada por 15 minutos."
+    },
+    {
+      "heading": false,
+      "text": "• Ao cadastrar um dependente, você declara ser responsável legal por ele ou ter a autorização dele."
+    },
+    {
+      "heading": true,
+      "text": "4. Agendamentos"
+    },
+    {
+      "heading": false,
+      "text": "• O horário só é reservado depois da confirmação. Um mesmo horário não pode ser reservado duas vezes."
+    },
+    {
+      "heading": false,
+      "text": "• Você pode cancelar uma consulta futura pelo app; o horário volta a ficar disponível."
+    },
+    {
+      "heading": false,
+      "text": "• Valores exibidos são informados pelo médico e pagos diretamente a ele. O LifeHub não processa pagamentos."
+    },
+    {
+      "heading": true,
+      "text": "5. Médicos"
+    },
+    {
+      "heading": false,
+      "text": "Médicos só aparecem na busca depois que a equipe do LifeHub confere o CRM e os documentos enviados. O médico é o único responsável pelo atendimento que presta."
+    },
+    {
+      "heading": true,
+      "text": "6. Uso indevido"
+    },
+    {
+      "heading": false,
+      "text": "Contas usadas para fraude, cadastro falso ou abuso podem ser bloqueadas pela administração. Todo bloqueio fica registrado com o motivo."
+    },
+    {
+      "heading": true,
+      "text": "7. Encerramento"
+    },
+    {
+      "heading": false,
+      "text": "Você pode excluir sua conta a qualquer momento em Perfil → Privacidade."
+    }
+  ],
+  "Política de Privacidade": [
+    {
+      "heading": false,
+      "text": "Esta política segue a Lei Geral de Proteção de Dados (Lei nº 13.709/2018, LGPD). Usamos o mínimo de dados necessário para você agendar consultas."
+    },
+    {
+      "heading": true,
+      "text": "1. Dados que coletamos"
+    },
+    {
+      "heading": false,
+      "text": "• Conta: nome, e-mail, celular, CPF, data de nascimento e senha (guardada só como hash Argon2)."
+    },
+    {
+      "heading": false,
+      "text": "• Dependentes: nome, data de nascimento, sexo, parentesco e, se você quiser, CPF."
+    },
+    {
+      "heading": false,
+      "text": "• Consultas: médico, clínica, serviço, data, situação e motivo de cancelamento."
+    },
+    {
+      "heading": false,
+      "text": "• Médicos: CRM, UF, especialidade, apresentação e documentos enviados para verificação."
+    },
+    {
+      "heading": false,
+      "text": "• Registros técnicos: sessões de acesso e aceites destes documentos, com data e versão."
+    },
+    {
+      "heading": false,
+      "text": "Não coletamos diagnósticos, sintomas, exames ou prontuário."
+    },
+    {
+      "heading": true,
+      "text": "2. Para que usamos"
+    },
+    {
+      "heading": false,
+      "text": "• Criar e proteger sua conta (execução do contrato, art. 7º, V)."
+    },
+    {
+      "heading": false,
+      "text": "• Agendar, lembrar e cancelar consultas (execução do contrato e consentimento para dados de saúde, art. 11, I)."
+    },
+    {
+      "heading": false,
+      "text": "• Verificar médicos e manter a plataforma segura (legítimo interesse e prevenção à fraude, art. 7º, IX e art. 11, II, g)."
+    },
+    {
+      "heading": false,
+      "text": "• Enviar campanhas de saúde, somente se você ativar essa opção."
+    },
+    {
+      "heading": true,
+      "text": "3. Com quem compartilhamos"
+    },
+    {
+      "heading": false,
+      "text": "O médico que você escolheu vê apenas o nome e a idade do paciente e os dados da consulta. Ele não vê CPF, data de nascimento nem os demais dependentes. Não vendemos nem compartilhamos dados com terceiros."
+    },
+    {
+      "heading": true,
+      "text": "4. Como protegemos"
+    },
+    {
+      "heading": false,
+      "text": "• CPF criptografado (AES-256-GCM) e identificado por um código irreversível (HMAC-SHA256). Nas telas, aparece mascarado."
+    },
+    {
+      "heading": false,
+      "text": "• Documentos dos médicos guardados criptografados; o acesso da administração é temporário e registrado."
+    },
+    {
+      "heading": false,
+      "text": "• Senhas com Argon2, sessões que expiram, limite de tentativas de login e de requisições."
+    },
+    {
+      "heading": false,
+      "text": "• Cada perfil (paciente, médico, administração) só acessa o que precisa."
+    },
+    {
+      "heading": true,
+      "text": "5. Por quanto tempo"
+    },
+    {
+      "heading": false,
+      "text": "Enquanto a conta existir. Ao excluir a conta, os dados pessoais são apagados ou anonimizados na hora. Ficam apenas registros sem identificação, necessários para a agenda dos médicos e para comprovar os consentimentos."
+    },
+    {
+      "heading": true,
+      "text": "6. Seus direitos (art. 18)"
+    },
+    {
+      "heading": false,
+      "text": "• Acesso e portabilidade: baixe todos os seus dados em Perfil → Privacidade → Baixar meus dados."
+    },
+    {
+      "heading": false,
+      "text": "• Correção: edite seus dados e os dos dependentes no app."
+    },
+    {
+      "heading": false,
+      "text": "• Eliminação e revogação do consentimento: exclua a conta em Perfil → Privacidade."
+    },
+    {
+      "heading": false,
+      "text": "• Comunicações: ative ou desative e-mails e campanhas a qualquer momento."
+    },
+    {
+      "heading": true,
+      "text": "7. Crianças e adolescentes"
+    },
+    {
+      "heading": false,
+      "text": "Dados de menores são cadastrados apenas pelo responsável legal, com declaração expressa de responsabilidade, no melhor interesse da criança (art. 14)."
+    },
+    {
+      "heading": true,
+      "text": "8. Cookies e armazenamento no navegador"
+    },
+    {
+      "heading": false,
+      "text": "O LifeHub não usa cookies de rastreamento, de estatística ou de publicidade, nem ferramentas de terceiros que acompanhem sua navegação. Por isso não pedimos que você aceite ou recuse cookies: o que guardamos é só o necessário para o app funcionar, o que a LGPD permite sem consentimento (art. 7º, V, execução do serviço que você pediu)."
+    },
+    {
+      "heading": false,
+      "text": "• Sessão (lifehub.accessToken e lifehub.refreshToken): mantêm você conectado. São apagados quando você sai da conta."
+    },
+    {
+      "heading": false,
+      "text": "• Aviso visto (lifehub.avisoArmazenamento): lembra que você já leu o aviso sobre armazenamento, para não mostrá-lo de novo."
+    },
+    {
+      "heading": false,
+      "text": "• Tamanho da letra (lifehub.tamanhoLetra): guarda o tamanho escolhido no botão A+."
+    },
+    {
+      "heading": false,
+      "text": "• Mapa permitido (lifehub.mapaPermitido): lembra que você pediu para ver os mapas, para não perguntar de novo."
+    },
+    {
+      "heading": false,
+      "text": "• Arquivos do app (cache do aplicativo): telas, imagens e fontes, para o LifeHub abrir mais rápido. Nenhum dado pessoal ou de saúde fica nesse cache."
+    },
+    {
+      "heading": false,
+      "text": "As fontes e as fotos são servidas pelo próprio LifeHub. Só dois serviços de fora são usados, e nenhum deles recebe dados da sua conta: o ViaCEP, quando um médico digita o CEP do consultório (só esse número é enviado), e o OpenStreetMap, que desenha o mapa da clínica. O mapa só é carregado depois que você clica em \"Mostrar mapa\", porque o OpenStreetMap recebe o endereço IP de quem o abre."
+    },
+    {
+      "heading": false,
+      "text": "Você pode apagar tudo isso a qualquer momento saindo da conta ou limpando os dados do site nas configurações do navegador."
+    },
+    {
+      "heading": true,
+      "text": "9. Contato"
+    },
+    {
+      "heading": false,
+      "text": "Encarregado de dados (projeto acadêmico): equipe LifeHub, pelo canal da disciplina."
+    }
+  ],
+  "Consentimento para dados de saúde": [
+    {
+      "heading": false,
+      "text": "Saber que você (ou um dependente) marcou uma consulta com um médico de determinada especialidade é um dado pessoal sensível (LGPD, art. 5º, II). Por isso pedimos seu consentimento específico e destacado."
+    },
+    {
+      "heading": true,
+      "text": "Ao consentir, você autoriza que o LifeHub:"
+    },
+    {
+      "heading": false,
+      "text": "• registre as consultas que você agendar para você e seus dependentes;"
+    },
+    {
+      "heading": false,
+      "text": "• informe ao médico escolhido o nome e a idade do paciente e os dados da consulta;"
+    },
+    {
+      "heading": false,
+      "text": "• envie lembretes e avisos sobre essas consultas."
+    },
+    {
+      "heading": true,
+      "text": "O LifeHub não vai:"
+    },
+    {
+      "heading": false,
+      "text": "• pedir ou guardar diagnósticos, sintomas, exames ou prontuário;"
+    },
+    {
+      "heading": false,
+      "text": "• usar esses dados para publicidade ou compartilhá-los com terceiros."
+    },
+    {
+      "heading": true,
+      "text": "Revogação"
+    },
+    {
+      "heading": false,
+      "text": "Você pode revogar este consentimento a qualquer momento excluindo sua conta em Perfil → Privacidade. Sem ele não é possível agendar consultas pelo LifeHub."
+    }
+  ]
+}
