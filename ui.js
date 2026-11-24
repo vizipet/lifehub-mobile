@@ -286,18 +286,51 @@ export function Sheet({ title, visible, onClose, children }) {
     </Modal>
   );
 }
+// Foco normalizado dos retratos locais: centro do rosto/ombros na foto original.
+const portraitFocus = {
+  '/assets/photos/medicos/andre.jpg': [0.44, 0.278],
+  '/assets/photos/medicos/beatriz.jpg': [0.49, 0.365],
+  '/assets/photos/medicos/bruno.jpg': [0.49, 0.335],
+  '/assets/photos/medicos/camila.jpg': [0.58, 0.345],
+  '/assets/photos/medicos/helena.jpg': [0.52, 0.278],
+  '/assets/photos/medicos/laura.jpg': [0.40, 0.30],
+  '/assets/photos/medicos/paulo.jpg': [0.48, 0.275],
+  '/assets/photos/medicos/rafael.jpg': [0.57, 0.30],
+};
+
+// Enquadra uma região quadrada sem esticar a imagem nem deixar faixas vazias.
+function portraitFrame(size, width, height, focus) {
+  const zoom = size / (Math.min(width, height) * (focus ? 0.80 : 1));
+  const w = width * zoom, h = height * zoom;
+  const [x, y] = focus || [0.5, 0.5];
+  const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
+  return {
+    position: 'absolute',
+    width: w,
+    height: h,
+    left: clamp(size / 2 - w * x, size - w, 0),
+    top: focus ? clamp(size / 2 - h * y, size - h, 0) : (size - h) * 0.15,
+  };
+}
 export function Avatar({ name = '', url, size = 55, round = false }) {
   const [failed, setFailed] = useState(null);
+  const [loaded, setLoaded] = useState(null);
+  const local = photos[url];
   const src =
-    photos[url] ||
+    local ||
     (url?.startsWith('/public/')
       ? { uri: apiBase() + url }
       : url?.startsWith('https://')
         ? { uri: url }
         : null);
+  const dimensions = local ? Image.resolveAssetSource(local) : loaded?.url === url ? loaded : null;
+  const imageStyle = dimensions?.width > 0 && dimensions?.height > 0
+    ? portraitFrame(size, dimensions.width, dimensions.height, portraitFocus[url])
+    : { width: size, height: size };
   const box = {
     width: size,
     height: size,
+    flexShrink: 0,
     borderRadius: round ? size / 2 : 10,
     backgroundColor: colors.soft,
     alignItems: 'center',
@@ -312,10 +345,19 @@ export function Avatar({ name = '', url, size = 55, round = false }) {
     <View style={box}>
       {src && failed !== url ? (
         <Image
+          key={url}
           source={src}
           resizeMode="cover"
+          onLoad={({ nativeEvent }) => {
+            if (local) return;
+            const { width, height } = nativeEvent.source || {};
+            if (width > 0 && height > 0) {
+              setLoaded((previous) => previous?.url === url && previous.width === width && previous.height === height
+                ? previous : { url, width, height });
+            }
+          }}
           onError={() => setFailed(url)}
-          style={{ width: size, height: size, transform: !round && photos[url] ? [{ scale: 1.4 }] : [] }}
+          style={imageStyle}
         />
       ) : (
         <T type="heading" color={colors.brand}>
