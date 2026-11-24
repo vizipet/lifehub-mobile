@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { AccessibilityInfo, Animated, Linking, Pressable, View } from 'react-native';
 import { randomUUID } from 'expo-crypto';
+import ClinicMap from './ClinicMap';
 import { useSession, useAction, useData } from './api';
 import {
   T,
@@ -117,6 +118,7 @@ export default function Doctor({ route, navigation }) {
                 <T type="bold" style={{ flex: 1 }}>{c.name}</T>
               </View>
               <T type="small" color={colors.muted}>{[c.address, c.neighborhood, c.city].filter(Boolean).join(' · ')}</T>
+              <ClinicMap name={c.name} latitude={c.latitude} longitude={c.longitude} />
               <Btn kind="link" icon="Navigation" onPress={() => openMap(c)}>
                 Como chegar
               </Btn>
