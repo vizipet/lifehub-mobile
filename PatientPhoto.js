@@ -37,10 +37,21 @@ async function pickPhoto(camera) {
   const actions = [];
   if (image.width !== image.height) actions.push({ crop: { originX: Math.floor((image.width - side) / 2),
     originY: Math.floor((image.height - side) / 2), width: side, height: side } });
-  actions.push({ resize: { width: Math.min(512, side) } });
-  return ImageManipulator.manipulateAsync(image.uri, actions, {
-    compress: 0.72, format: ImageManipulator.SaveFormat.JPEG,
-  });
+  // Use a bounded JSON payload instead of relying on native multipart/file URI handling.
+  const maxBase64Length = 87384;
+  for (const [width, compress] of [[512, 0.75], [512, 0.55], [384, 0.55], [256, 0.45]]) {
+    const processed = await ImageManipulator.manipulateAsync(
+      image.uri, [...actions, { resize: { width: Math.min(width, side) } }],
+      { compress, format: ImageManipulator.SaveFormat.JPEG, base64: true },
+    );
+    // Base64 length rounds up to groups of four; account for final padding.
+    if (processed.base64) {
+      const padding = processed.base64.endsWith('==') ? 2 : processed.base64.endsWith('=') ? 1 : 0;
+      const byteLength = processed.base64.length * 3 / 4 - padding;
+      if (processed.base64.length <= maxBase64Length && byteLength <= 65536) return processed;
+    }
+  }
+  throw Error('Não foi possível compactar a foto. Escolha outra imagem.');
 }
 
 export function PatientPhotoEditor({ patient, onClose, onChanged }) {
@@ -59,10 +70,10 @@ export function PatientPhotoEditor({ patient, onClose, onChanged }) {
   function save() {
     if (!draft || !allowed || !patient?.id) return;
     action.run(async () => {
-      const form = new FormData();
-      form.append('authorized', 'true');
-      form.append('file', { uri: draft.uri, type: 'image/jpeg', name: 'avatar.jpg' });
-      await call('/patients/' + patient.id + '/photo', { method: 'POST', body: form, multipart: true });
+      if (!draft.base64) throw Error('Escolha novamente a foto antes de salvar.');
+      await call('/patients/' + patient.id + '/photo', {
+        method: 'PUT', body: { authorized: true, base64: draft.base64 },
+      });
       onChanged();
       onClose();
     });
