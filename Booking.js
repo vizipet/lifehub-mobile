@@ -1,5 +1,5 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { AccessibilityInfo, Animated, Linking, Pressable, View } from 'react-native';
+import React, { useContext, useEffect, useRef, useState } from 'react';
+import { AccessibilityInfo, Animated, Linking, Pressable, View, useWindowDimensions } from 'react-native';
 import { randomUUID } from 'expo-crypto';
 import ClinicMap from './ClinicMap';
 import { useSession, useAction, useData } from './api';
@@ -14,6 +14,7 @@ import {
   Avatar,
   Icon,
   LabelRow,
+  FontScale,
   s,
   colors,
   spacing,
@@ -28,6 +29,35 @@ import {
   todayKey,
   tomorrowKey,
 } from './format';
+// Equal-width columns with a stable last row; adapt to available space and accessibility text size.
+function BookingGrid({ children, minCellWidth }) {
+  const [width, setWidth] = useState(0);
+  const { fontScale } = useWindowDimensions();
+  const appScale = useContext(FontScale);
+  const scale = Math.max(1, fontScale * appScale);
+  const min = minCellWidth * scale;
+  const columns = width > 0
+    ? Math.max(1, Math.min(3, Math.floor((width + spacing.sm) / (min + spacing.sm))))
+    : 1;
+  const items = React.Children.toArray(children);
+  const rows = [];
+  for (let i = 0; i < items.length; i += columns) rows.push(items.slice(i, i + columns));
+  return (
+    <View style={{ gap: spacing.sm }}
+      onLayout={({ nativeEvent }) => setWidth(nativeEvent.layout.width)}>
+      {rows.map((row) => (
+        <View key={row[0].key} style={{ flexDirection: 'row', gap: spacing.sm }}>
+          {row.map((item) => (
+            <View key={item.key} style={{ flex: 1, minWidth: 0 }}>{item}</View>
+          ))}
+          {Array.from({ length: columns - row.length }, (_, i) => (
+            <View key={'empty-' + i} style={{ flex: 1 }} />
+          ))}
+        </View>
+      ))}
+    </View>
+  );
+}
 export default function Doctor({ route, navigation }) {
   const { id, clinic, serviceId, preferredDay } = route.params;
   const profile = useData('/public/professionals/' + id),
@@ -171,12 +201,12 @@ export default function Doctor({ route, navigation }) {
           {service && (
             <Card>
               <T type="heading">2. Escolha o horário</T>
-              <T type="small" color={colors.muted}>Horário de Recife (UTC−3).</T>
+              <T type="small" color={colors.muted}>Horários de Recife.</T>
               <Status result={slots} />
               {days.length > 0 && (
                 <>
                   <T type="bold">Dias disponíveis</T>
-                  <View style={s.wrap}>
+                  <BookingGrid minCellWidth={82}>
                     {visibleDays.map((d) => {
                       const iso = byDay[d][0].startsAt;
                       const day = d === todayKey() ? 'Hoje' : d === tomorrowKey() ? 'Amanhã'
@@ -190,20 +220,20 @@ export default function Doctor({ route, navigation }) {
                           accessibilityLabel={dateLong(iso) + ', ' + count + (count === 1 ? ' horário disponível' : ' horários disponíveis')}
                           onPress={() => setDay(d)}
                           style={({ pressed }) => ({
-                            minWidth: 76, minHeight: 76, padding: spacing.sm, flexShrink: 1, gap: spacing.xs,
+                            minHeight: 80, paddingHorizontal: spacing.xs, paddingVertical: spacing.sm, gap: spacing.xs,
                             alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderRadius: 12,
                             borderColor: selectedDay ? colors.brand : colors.line,
                             backgroundColor: selectedDay ? colors.brand : colors.card,
                             opacity: pressed ? 0.76 : 1,
                           })}
                         >
-                          <T type="small" color={selectedDay ? 'white' : colors.muted}>{day}</T>
+                          <T type="small" color={selectedDay ? 'white' : colors.muted} style={{ textAlign: 'center' }}>{day}</T>
                           <T type="heading" color={color} style={{ fontVariant: ['tabular-nums'] }}>{d.slice(8)}/{d.slice(5, 7)}</T>
-                          <T type="small" color={selectedDay ? 'white' : colors.muted}>{count} {count === 1 ? 'vaga' : 'vagas'}</T>
+                          <T type="small" color={selectedDay ? 'white' : colors.muted} style={{ textAlign: 'center' }}>{count} {count === 1 ? 'vaga' : 'vagas'}</T>
                         </Pressable>
                       );
                     })}
-                  </View>
+                  </BookingGrid>
                   {days.length > 6 && (
                     <Btn kind="link" onPress={() => setShowAllDays((value) => !value)}>
                       {showAllDays ? 'Mostrar menos datas' : 'Ver todas as datas (' + days.length + ')'}
@@ -212,13 +242,13 @@ export default function Doctor({ route, navigation }) {
                   <View style={{ height: 1, backgroundColor: colors.line, marginVertical: spacing.xs }} />
                   <T type="bold">{dateLong(byDay[active][0].startsAt)}</T>
                   <T type="small" color={colors.muted}>Toque em um horário para revisar a consulta.</T>
-                  <View style={s.wrap}>
+                  <BookingGrid minCellWidth={76}>
                     {byDay[active].map((slot) => (
                       <Pressable key={slot.id} accessibilityRole="button"
                         accessibilityLabel={'Agendar às ' + time(slot.startsAt)}
                         onPress={() => review(slot)}
                         style={({ pressed }) => ({
-                          minWidth: 72, minHeight: 44, paddingHorizontal: spacing.md, paddingVertical: spacing.sm,
+                          minHeight: 48, paddingHorizontal: spacing.xs, paddingVertical: spacing.sm,
                           borderWidth: 1, borderColor: colors.brand, borderRadius: 9, backgroundColor: pressed ? colors.soft : colors.card,
                           alignItems: 'center', justifyContent: 'center',
                         })}
@@ -226,7 +256,7 @@ export default function Doctor({ route, navigation }) {
                         <T type="bold" color={colors.brand} style={{ fontVariant: ['tabular-nums'] }}>{time(slot.startsAt)}</T>
                       </Pressable>
                     ))}
-                  </View>
+                  </BookingGrid>
                 </>
               )}
               {slots.data?.length === 0 && (
