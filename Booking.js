@@ -235,9 +235,25 @@ export default function Doctor({ route, navigation }) {
                     })}
                   </BookingGrid>
                   {days.length > 6 && (
-                    <Btn kind="link" onPress={() => setShowAllDays((value) => !value)}>
-                      {showAllDays ? 'Mostrar menos datas' : 'Ver todas as datas (' + days.length + ')'}
-                    </Btn>
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityState={{ expanded: showAllDays }}
+                      onPress={() => setShowAllDays((value) => !value)}
+                      style={({ pressed }) => ({
+                        minHeight: 48, paddingHorizontal: spacing.md, paddingVertical: spacing.sm,
+                        flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+                        gap: spacing.sm, borderRadius: 9, borderWidth: 1,
+                        borderColor: colors.brand, backgroundColor: pressed ? colors.soft : colors.card,
+                      })}
+                    >
+                      <Icon name="CalendarDays" size={19} />
+                      <T type="bold" color={colors.brand} style={{ flexShrink: 1, textAlign: 'center' }}>
+                        {showAllDays ? 'Mostrar menos datas' : 'Ver todas as datas (' + days.length + ')'}
+                      </T>
+                      <View style={{ transform: [{ rotate: showAllDays ? '-90deg' : '90deg' }] }}>
+                        <Icon name="ChevronRight" size={18} />
+                      </View>
+                    </Pressable>
                   )}
                   <View style={{ height: 1, backgroundColor: colors.line, marginVertical: spacing.xs }} />
                   <T type="bold">{dateLong(byDay[active][0].startsAt)}</T>
