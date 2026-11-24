@@ -418,71 +418,174 @@ export function Review({ navigation, route }) {
       });
     });
   }
+  const canConfirm = !!person && agreement && !action.busy && !patients.error;
+  const appScale = useContext(FontScale);
+  const rowDivider = { height: 1, backgroundColor: colors.line };
+  const consentText = 'Confirmo os dados acima e autorizo o compartilhamento do nome e da idade do paciente com o médico escolhido.';
   return (
-    <Page>
-      <T type="title">Revise o agendamento</T>
-      <Card>
-        <T type="heading">Quem será atendido?</T>
-        <Status result={patients} />
-        {patients.data?.map((p) => (
-          <Pressable
-            key={p.id}
-            accessibilityRole="radio"
-            accessibilityState={{ checked: p.id === person?.id }}
-            onPress={() => {
-              setChosen(p.id);
-              setAgreement(false);
-            }}
-            style={[
-              s.row,
-              {
-                padding: 9,
-                borderWidth: 1,
-                borderColor: p.id === person?.id ? colors.brand : colors.line,
-                borderRadius: 8,
-              },
-            ]}
-          >
-            <Icon name={p.id === person?.id ? 'Check' : 'User'} />
-            <View style={{ flex: 1 }}>
-              <T type="bold">{p.name}</T>
-              <T type="small">
-                {relationshipLabel[p.relationship]} · {p.age} anos
+    <View style={s.page}>
+      <Page>
+        <View style={{ gap: spacing.xs }}>
+          <T type="title">Revise seu agendamento</T>
+          <T color={colors.muted}>Confira os dados antes de confirmar.</T>
+        </View>
+
+        <Card style={{ gap: spacing.md }}>
+          <T type="heading">Quem será atendido?</T>
+          <Status result={patients} />
+          {patients.data?.map((p) => {
+            const active = p.id === person?.id;
+            return (
+              <Pressable
+                key={p.id}
+                accessibilityRole="radio"
+                accessibilityState={{ checked: active, disabled: action.busy }}
+                disabled={action.busy}
+                onPress={() => {
+                  setChosen(p.id);
+                  setAgreement(false);
+                }}
+                style={({ pressed }) => [
+                  s.row,
+                  {
+                    minHeight: 68, padding: spacing.md, borderWidth: 1,
+                    borderColor: active ? colors.brand : colors.line,
+                    backgroundColor: active ? colors.soft : colors.card,
+                    borderRadius: 12, opacity: pressed ? 0.78 : 1,
+                    alignItems: 'center',
+                  },
+                ]}
+              >
+                <Avatar name={p.name} size={40} round />
+                <View style={{ flex: 1, minWidth: 0, gap: spacing.xs }}>
+                  <T type="bold">{p.name}</T>
+                  <T type="small" color={colors.muted}>
+                    {relationshipLabel[p.relationship]} · {p.age} anos
+                  </T>
+                </View>
+                <View style={{ width: 24, height: 24, borderRadius: 12, borderWidth: 1,
+                  borderColor: active ? colors.brand : colors.muted,
+                  backgroundColor: active ? colors.brand : colors.card,
+                  alignItems: 'center', justifyContent: 'center' }}>
+                  {active && <Icon name="Check" color="white" size={16} />}
+                </View>
+              </Pressable>
+            );
+          })}
+          <Btn kind="outline" icon="Plus" disabled={action.busy}
+            onPress={() => navigation.navigate('Dependentes')}>
+            Adicionar dependente
+          </Btn>
+        </Card>
+
+        <Card style={{ gap: spacing.md }}>
+          <T type="heading">Resumo da consulta</T>
+          <View style={[s.row, { alignItems: 'center' }]}>
+            <View style={{ width: 44, height: 44, borderRadius: 12, backgroundColor: colors.soft,
+              alignItems: 'center', justifyContent: 'center' }}>
+              <Icon name="Stethoscope" size={23} />
+            </View>
+            <View style={{ flex: 1, minWidth: 0, gap: spacing.xs }}>
+              <T type="small" color={colors.muted}>Profissional</T>
+              <T type="heading" style={{ fontSize: 19 * appScale }}>{professional.name}</T>
+            </View>
+          </View>
+          <View style={{ backgroundColor: colors.soft, borderRadius: 10, padding: spacing.md,
+            flexDirection: 'row', alignItems: 'flex-start', gap: spacing.sm }}>
+            <Icon name="CalendarDays" size={22} />
+            <View style={{ flex: 1, minWidth: 0, gap: spacing.xs }}>
+              <T type="small" color={colors.muted}>{dateLong(slot.startsAt)}</T>
+              <T type="heading" color={colors.brand} style={{ fontVariant: ['tabular-nums'] }}>{time(slot.startsAt)}</T>
+            </View>
+          </View>
+          <View style={[s.row, { alignItems: 'flex-start' }]}>
+            <Icon name={service.modality === 'REMOTE' ? 'Video' : 'Stethoscope'} size={20} />
+            <View style={{ flex: 1, minWidth: 0, gap: spacing.xs }}>
+              <T type="bold">{service.name}</T>
+              <T type="small" color={colors.muted}>{modalityLabel[service.modality]} · {service.durationMinutes} minutos</T>
+            </View>
+          </View>
+          {!!(location?.name || location?.address) && (
+            <View style={[s.row, { alignItems: 'flex-start' }]}>
+              <Icon name="MapPin" size={20} />
+              <View style={{ flex: 1, minWidth: 0, gap: spacing.xs }}>
+                {!!location?.name && <T type="bold">{location.name}</T>}
+                {!!location?.address && <T type="small" color={colors.muted}>{location.address}</T>}
+              </View>
+            </View>
+          )}
+          <View style={rowDivider} />
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center',
+            justifyContent: 'space-between', gap: spacing.sm }}>
+            <T type="bold" color={colors.muted}>Valor da consulta</T>
+            <T type="title" color={colors.brand} style={{ flexShrink: 1, fontVariant: ['tabular-nums'] }}>
+              {money(service.priceCents)}
+            </T>
+          </View>
+        </Card>
+
+        <Card style={{ gap: spacing.md }}>
+          <View style={[s.row, { alignItems: 'flex-start' }]}>
+            <Icon name="ShieldCheck" size={23} />
+            <View style={{ flex: 1, minWidth: 0, gap: spacing.xs }}>
+              <T type="bold">Privacidade do paciente</T>
+              <T type="small" color={colors.muted} style={{ lineHeight: 20 * appScale }}>
+                O médico receberá o nome e a idade do paciente para o atendimento.
               </T>
             </View>
+          </View>
+          <View style={rowDivider} />
+          <Pressable
+            accessibilityRole="checkbox"
+            accessibilityLabel={consentText}
+            accessibilityState={{ checked: agreement, disabled: action.busy }}
+            disabled={action.busy}
+            onPress={() => setAgreement((value) => !value)}
+            style={({ pressed }) => ({
+              flexDirection: 'row', alignItems: 'flex-start', gap: spacing.md,
+              minHeight: 48, padding: spacing.md, borderWidth: 1, borderRadius: 10,
+              borderColor: agreement ? colors.brand : colors.line,
+              backgroundColor: agreement || pressed ? colors.soft : colors.card,
+            })}
+          >
+            <View style={{ width: 26, height: 26, borderRadius: 6, borderWidth: 1.5,
+              borderColor: colors.brand, backgroundColor: agreement ? colors.brand : colors.card,
+              alignItems: 'center', justifyContent: 'center' }}>
+              {agreement && <Icon name="Check" size={19} color="white" />}
+            </View>
+            <T style={{ flex: 1, lineHeight: 23 * appScale }}>{consentText}</T>
           </Pressable>
-        ))}
-        <Btn kind="link" onPress={() => navigation.navigate('Dependentes')}>
-          Adicionar dependente
-        </Btn>
-      </Card>
-      <Card>
-        <T type="heading">Resumo da consulta</T>
-        <LabelRow icon="Stethoscope">{professional.name}</LabelRow>
-        <LabelRow icon="Clock">
-          {dateLong(slot.startsAt)} · {time(slot.startsAt)}
-        </LabelRow>
-        <LabelRow icon="CalendarCheck">
-          {service.name} · {modalityLabel[service.modality]} · {service.durationMinutes} min ·{' '}
-          {money(service.priceCents)}
-        </LabelRow>
-        <LabelRow icon="MapPin">
-          {[location?.name, location?.address].filter(Boolean).join(' · ')}
-        </LabelRow>
-      </Card>
-      <Notice>O médico receberá o nome e a idade do paciente para o atendimento.</Notice>
-      <Check value={agreement} onChange={setAgreement}>
-        Confirmo os dados acima e autorizo o compartilhamento do nome e da idade do paciente com o
-        médico escolhido.
-      </Check>
-      <Notice error>{action.error}</Notice>
-      <Btn disabled={!agreement || !person || action.busy} onPress={confirm} icon="CalendarCheck">
-        {action.busy ? 'Confirmando…' : 'Confirmar agendamento'}
-      </Btn>
-      <Btn disabled={action.busy} kind="link" onPress={() => navigation.goBack()}>
-        Escolher outro horário
-      </Btn>
-    </Page>
+        </Card>
+      </Page>
+
+      <View style={{ backgroundColor: colors.card, borderTopWidth: 1, borderTopColor: colors.line }}>
+        <View style={{ width: '100%', maxWidth: 720, alignSelf: 'center',
+          paddingHorizontal: spacing.lg, paddingVertical: spacing.md, gap: spacing.sm }}>
+          <Notice error>{action.error}</Notice>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityState={{ disabled: !canConfirm, busy: action.busy }}
+            disabled={!canConfirm}
+            onPress={confirm}
+            style={({ pressed }) => ({
+              minHeight: 52, padding: spacing.md, borderRadius: 10, flexDirection: 'row',
+              alignItems: 'center', justifyContent: 'center', gap: spacing.sm,
+              backgroundColor: canConfirm || action.busy ? colors.brand : colors.soft,
+              opacity: pressed ? 0.78 : 1,
+            })}
+          >
+            <Icon name="CalendarCheck" color={canConfirm || action.busy ? 'white' : colors.muted} size={21} />
+            <T type="bold" color={canConfirm || action.busy ? 'white' : colors.muted}
+              style={{ flexShrink: 1, textAlign: 'center' }}>
+              {action.busy ? 'Confirmando…' : 'Confirmar agendamento'}
+            </T>
+          </Pressable>
+          <Btn kind="outline" icon="ArrowLeft" disabled={action.busy} onPress={() => navigation.goBack()}>
+            Escolher outro horário
+          </Btn>
+        </View>
+      </View>
+    </View>
   );
 }
 export function Success({ route, navigation }) {
