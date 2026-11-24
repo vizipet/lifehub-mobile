@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { Image, View } from 'react-native';
+import { Image, Modal, Pressable, ScrollView, View, useWindowDimensions } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import * as ImageManipulator from 'expo-image-manipulator';
 import { useData, useSession, useAction } from './api';
-import { Avatar, Btn, Check, Notice, Sheet, T, colors, spacing } from './ui';
+import { Avatar, Btn, Check, Icon, Notice, T, colors, spacing } from './ui';
 
 export function PatientAvatar({ patient, name, size = 48 }) {
   const result = useData(patient?.id && patient.photoVersion
@@ -88,40 +88,112 @@ export function PatientPhotoEditor({ patient, onClose, onChanged }) {
       onClose();
     });
   }
+  const { height } = useWindowDimensions();
+  const close = () => { if (!action.busy) onClose(); };
+  const title = removing ? 'Remover foto?' : patient.isHolder ? 'Minha foto de perfil' : 'Foto do dependente';
+  const previewSize = 132;
   return (
-    <Sheet visible={true} title={patient.isHolder ? 'Minha foto de perfil' : 'Foto do dependente'}
-      onClose={() => { if (!action.busy) onClose(); }}>
-      <View style={{ alignItems: 'center', gap: spacing.sm }}>
-        {draft ? <View style={{ width: 112, height: 112, borderRadius: 56, borderWidth: 1.5,
-          borderColor: colors.brand, padding: 2, backgroundColor: colors.card }}>
-          <Image source={{ uri: draft.uri }} style={{ width: 105, height: 105, borderRadius: 52.5 }} resizeMode="cover" />
-        </View>
-          : <PatientAvatar patient={patient} size={112} />}
-        <T type="heading" style={{ textAlign: 'center' }}>{patient.name}</T>
-        <T type="small" color={colors.muted} style={{ textAlign: 'center' }}>Foto opcional, visível somente na sua conta.</T>
-      </View>
-      {!removing && (
-        <>
-          <Btn kind="outline" disabled={action.busy} onPress={() => choose(false)}>Escolher da galeria</Btn>
-          <Btn kind="outline" disabled={action.busy} onPress={() => choose(true)}>Tirar foto</Btn>
-          {!!draft && !patient.isHolder && (
-            <Check value={authorized} onChange={setAuthorized}>
-              Confirmo que sou responsável legal ou tenho autorização do dependente para cadastrar esta foto.
-            </Check>
+    <Modal visible transparent animationType="fade" onRequestClose={close}>
+      <View style={{ flex: 1, backgroundColor: '#10232099', justifyContent: 'flex-end', padding: spacing.md }}>
+        <View style={{ width: '100%', maxWidth: 520, maxHeight: height * 0.9, alignSelf: 'center',
+          backgroundColor: colors.card, borderRadius: 24, overflow: 'hidden' }}>
+          <View style={{ paddingHorizontal: spacing.xl, paddingTop: spacing.md, paddingBottom: spacing.sm,
+            borderBottomWidth: 1, borderBottomColor: colors.line }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
+              <T type="heading" style={{ flex: 1 }}>{title}</T>
+              <Pressable accessibilityRole="button" accessibilityLabel="Fechar" disabled={action.busy}
+                onPress={close} style={({ pressed }) => ({ width: 44, height: 44, borderRadius: 22,
+                  alignItems: 'center', justifyContent: 'center', backgroundColor: colors.soft,
+                  opacity: action.busy ? 0.45 : pressed ? 0.7 : 1 })}>
+                <Icon name="X" size={20} />
+              </Pressable>
+            </View>
+          </View>
+          <ScrollView keyboardShouldPersistTaps="handled" bounces={false}
+            contentContainerStyle={{ padding: spacing.xl, gap: spacing.lg }}>
+            <View style={{ alignItems: 'center', gap: spacing.md }}>
+              {draft && !removing ? (
+                <View style={{ width: previewSize, height: previewSize, borderRadius: previewSize / 2,
+                  borderWidth: 1.5, borderColor: colors.brand, padding: 2, backgroundColor: colors.card }}>
+                  <Image source={{ uri: draft.uri }} style={{ width: previewSize - 7, height: previewSize - 7,
+                    borderRadius: (previewSize - 7) / 2 }} resizeMode="cover" />
+                </View>
+              ) : <PatientAvatar patient={patient} size={previewSize} />}
+              <View style={{ alignItems: 'center', gap: spacing.xs }}>
+                <T type="heading" style={{ textAlign: 'center' }}>{patient.name}</T>
+                <T type="small" color={colors.muted} style={{ textAlign: 'center' }}>
+                  {removing ? 'As iniciais voltarão a ser exibidas.' : draft ? 'Prévia da nova foto' : patient.photoVersion ? 'Foto de perfil atual' : 'Adicione uma foto de perfil'}
+                </T>
+              </View>
+            </View>
+            {!removing && (
+              <>
+                <View style={{ borderWidth: 1, borderColor: colors.line, borderRadius: 14, overflow: 'hidden' }}>
+                  {[
+                    { camera: false, title: 'Escolher da galeria', detail: 'Use uma foto do seu celular' },
+                    { camera: true, title: 'Tirar foto', detail: 'Capture uma nova imagem' },
+                  ].map((option, index) => (
+                    <Pressable key={String(option.camera)} accessibilityRole="button" disabled={action.busy}
+                      onPress={() => choose(option.camera)}
+                      style={({ pressed }) => ({ minHeight: 64, paddingHorizontal: spacing.md,
+                        paddingVertical: spacing.md, flexDirection: 'row', alignItems: 'center', gap: spacing.md,
+                        borderTopWidth: index ? 1 : 0, borderTopColor: colors.line,
+                        backgroundColor: pressed ? colors.soft : colors.card,
+                        opacity: action.busy ? 0.55 : 1 })}>
+                      <View style={{ flex: 1, minWidth: 0, gap: spacing.xs }}>
+                        <T type="bold" color={colors.brand}>{option.title}</T>
+                        <T type="small" color={colors.muted}>{option.detail}</T>
+                      </View>
+                      <Icon name="ChevronRight" size={18} />
+                    </Pressable>
+                  ))}
+                </View>
+                {!!draft && !patient.isHolder && (
+                  <Check value={authorized} onChange={setAuthorized}>
+                    Confirmo que sou responsável legal ou tenho autorização do dependente para cadastrar esta foto.
+                  </Check>
+                )}
+                <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: spacing.sm }}>
+                  <Icon name="ShieldCheck" size={18} color={colors.muted} />
+                  <T type="small" color={colors.muted} style={{ flex: 1 }}>
+                    Foto opcional, visível somente na sua conta.
+                  </T>
+                </View>
+                {!!patient.photoVersion && (
+                  <Pressable accessibilityRole="button" disabled={action.busy}
+                    onPress={() => { action.clear(); setRemoving(true); }}
+                    style={({ pressed }) => ({ minHeight: 44, flexDirection: 'row', alignItems: 'center',
+                      justifyContent: 'center', gap: spacing.sm, opacity: action.busy ? 0.5 : pressed ? 0.7 : 1 })}>
+                    <Icon name="Trash2" size={17} color={colors.danger} />
+                    <T type="bold" color={colors.danger}>Remover foto</T>
+                  </Pressable>
+                )}
+              </>
+            )}
+            {removing && (
+              <T style={{ textAlign: 'center' }}>Deseja remover esta foto de perfil da sua conta?</T>
+            )}
+            <Notice error>{action.error}</Notice>
+          </ScrollView>
+          {(removing || !!draft) && (
+            <View style={{ paddingHorizontal: spacing.xl, paddingVertical: spacing.md,
+              borderTopWidth: 1, borderTopColor: colors.line, gap: spacing.sm }}>
+              {removing ? (
+                <>
+                  <Btn kind="destructive" disabled={action.busy} onPress={remove} style={{ minHeight: 48 }}>
+                    {action.busy ? 'Removendo…' : 'Confirmar remoção'}
+                  </Btn>
+                  <Btn kind="link" disabled={action.busy} onPress={() => { action.clear(); setRemoving(false); }}>Manter foto</Btn>
+                </>
+              ) : (
+                <Btn disabled={!allowed || action.busy} onPress={save} icon="Check" style={{ minHeight: 48 }}>
+                  {action.busy ? 'Salvando…' : 'Salvar foto'}
+                </Btn>
+              )}
+            </View>
           )}
-          {!!draft && <Btn disabled={!allowed || action.busy} onPress={save}>{action.busy ? 'Salvando…' : 'Salvar foto'}</Btn>}
-          {!!patient.photoVersion && <Btn kind="danger" disabled={action.busy} onPress={() => setRemoving(true)}>Remover foto</Btn>}
-        </>
-      )}
-      {removing && (
-        <>
-          <T>Remover esta foto de perfil? As iniciais voltarão a ser exibidas.</T>
-          <Btn kind="destructive" disabled={action.busy} onPress={remove}>Confirmar remoção</Btn>
-          <Btn kind="outline" disabled={action.busy} onPress={() => setRemoving(false)}>Manter foto</Btn>
-        </>
-      )}
-      <Notice error>{action.error}</Notice>
-      <Btn kind="link" disabled={action.busy} onPress={onClose}>Voltar</Btn>
-    </Sheet>
+        </View>
+      </View>
+    </Modal>
   );
 }
