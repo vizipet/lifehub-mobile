@@ -1,32 +1,40 @@
-import React, { useState, useEffect } from 'react';
-import { FlatList, Pressable, View } from 'react-native';
+import React, { useState, useEffect, useRef, useContext } from 'react';
+import { FlatList, Pressable, View, useWindowDimensions } from 'react-native';
 import { useData } from './api';
-import { T, Field, Card, Btn, Chip, Sheet, Status, Avatar, LabelRow, colors, s } from './ui';
+import { T, Field, Card, Btn, Chip, Sheet, Status, Avatar, LabelRow, Icon, FontScale, colors, s, spacing } from './ui';
 import { whenLabel, todayKey, tomorrowKey, money, modalityLabel } from './format';
 export function ProviderCard({ item, navigation, compact = false }) {
   const { professional: p, clinic: c, nextService: service, nextAvailableAt: next } = item;
   return (
-    <Card>
-      <View style={s.row}>
+    <Card style={{ padding: spacing.md, gap: spacing.md }}>
+      <View style={[s.row, { gap: spacing.md }]}>
         <Avatar name={p.name} url={p.photoUrl} size={48} round />
-        <View style={{ flex: 1 }}>
-          <T type="heading">{p.name}</T>
+        <View style={{ flex: 1, minWidth: 0, gap: spacing.xs }}>
+          <T type="bold">{p.name}</T>
           <T type="small" color={colors.muted}>
-            {[p.specialty, p.crm && 'CRM ' + p.crm + '/' + p.crmState].filter(Boolean).join(' · ')}
+            {[p.specialty, p.crm && 'CRM ' + p.crm + (p.crmState ? '/' + p.crmState : '')].filter(Boolean).join(' · ')}
           </T>
         </View>
       </View>
       {!compact && (
         <LabelRow icon="MapPin">{[c.name, c.neighborhood].filter(Boolean).join(' · ')}</LabelRow>
       )}
-      <View style={s.soft}>
-        <T type="small">Próximo horário</T>
-        <T type="bold" color={colors.brand}>
-          {whenLabel(next)}
-        </T>
-        <T type="small">
-          {[service.name, modalityLabel[service.modality], money(service.priceCents)].join(' · ')}
-        </T>
+      <View style={[s.soft, { gap: spacing.sm }]}>
+        <T type="small" color={colors.muted}>Próximo horário</T>
+        <View style={[s.row, { alignItems: 'flex-start' }]}>
+          <Icon name="CalendarDays" size={18} />
+          <T type="bold" color={colors.brand} style={{ flex: 1, fontVariant: ['tabular-nums'] }}>
+            {whenLabel(next)}
+          </T>
+        </View>
+        <View style={{ height: 1, backgroundColor: colors.line }} />
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: spacing.sm }}>
+          <View style={{ flexGrow: 1, flexShrink: 1, flexBasis: 120, gap: spacing.xs }}>
+            <T type="small">{service.name}</T>
+            <T type="small" color={colors.muted}>{modalityLabel[service.modality]}</T>
+          </View>
+          <T type="bold" style={{ flexShrink: 1, fontVariant: ['tabular-nums'] }}>{money(service.priceCents)}</T>
+        </View>
       </View>
       <Btn
         kind={compact ? 'link' : 'primary'}
@@ -52,7 +60,12 @@ export default function Search({ navigation, route }) {
     [mode, setMode] = useState(''),
     [specialty, setSpecialty] = useState(''),
     [page, setPage] = useState(1),
-    [open, setOpen] = useState(false);
+    [open, setOpen] = useState(false),
+    [filtersOpen, setFiltersOpen] = useState(false);
+  const list = useRef(null);
+  const { width, fontScale } = useWindowDimensions();
+  const appScale = useContext(FontScale);
+  const stackSearch = width < 360 || fontScale * appScale > 1.25;
   const specialties = useData('/specialties'),
     options = specialties.data || [];
   useEffect(() => {
@@ -63,6 +76,8 @@ export default function Search({ navigation, route }) {
     setQuery('');
     setMode('');
     setSpecialty('');
+    setSuggest('');
+    setFiltersOpen(false);
   }, [route.params?.stamp]);
   useEffect(() => {
     const id = setTimeout(() => setSuggest(text.trim() === query ? '' : text.trim()), 250);
@@ -91,18 +106,38 @@ export default function Search({ navigation, route }) {
     setPage(1);
   }
   const total = result.meta?.totalPages || 1;
+  const specialtyName = options.find((o) => o.id === specialty)?.name;
+  const advancedCount = Number(!!mode) + Number(!!specialty);
+  const hasFilters = !!(query || day || mode || specialty || text);
+  function clearFilters() {
+    setText(''); setQuery(''); setSuggest(''); setDay(''); setMode(''); setSpecialty(''); setPage(1);
+  }
+  function changePage(value) {
+    list.current?.scrollToOffset({ offset: 0, animated: false });
+    setPage(value);
+  }
   const head = (
-    <View style={{ gap: 12 }}>
-      <T type="title">Buscar médicos</T>
-      <Card>
-        <Field
-          label="Nome ou especialidade"
-          placeholder="Ex.: cardiologia"
-          value={text}
-          onChangeText={setText}
-          returnKeyType="search"
-          onSubmitEditing={() => search()}
-        />
+    <View style={{ gap: spacing.md }}>
+      <View style={{ gap: spacing.xs }}>
+        <T type="title">Buscar médicos</T>
+        <T type="small" color={colors.muted}>Ordenado pelo horário livre mais próximo.</T>
+      </View>
+      <Card style={{ padding: spacing.md, gap: spacing.md }}>
+        <View style={{ flexDirection: stackSearch ? 'column' : 'row', alignItems: stackSearch ? 'stretch' : 'flex-end', gap: spacing.sm }}>
+          <View style={{ flex: stackSearch ? undefined : 1, minWidth: 0 }}>
+            <Field
+              label="Nome ou especialidade"
+              placeholder="Ex.: cardiologia"
+              value={text}
+              onChangeText={setText}
+              returnKeyType="search"
+              onSubmitEditing={() => search()}
+            />
+          </View>
+          <Btn icon="Search" style={{ minHeight: 46 }} onPress={() => search()}>
+            Buscar
+          </Btn>
+        </View>
         {suggest.length >= 2 && text.trim() !== query && (
           <View>
             {[
@@ -126,9 +161,6 @@ export default function Search({ navigation, route }) {
               ))}
           </View>
         )}
-        <Btn icon="Search" onPress={() => search()}>
-          Pesquisar
-        </Btn>
         <T type="bold">Quando?</T>
         <View style={s.wrap}>
           {[
@@ -141,22 +173,45 @@ export default function Search({ navigation, route }) {
             </Chip>
           ))}
         </View>
-        <T type="bold">Modalidade</T>
-        <View style={s.wrap}>
-          {[['', 'Todas'], ...Object.entries(modalityLabel)].map(([v, label]) => (
-            <Chip key={label} active={mode === v} onPress={() => select(setMode, v)}>
-              {label}
-            </Chip>
-          ))}
-        </View>
-        <Btn kind="outline" icon="SlidersHorizontal" onPress={() => setOpen(true)}>
-          {options.find((o) => o.id === specialty)?.name || 'Todas as especialidades'}
-        </Btn>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityState={{ expanded: filtersOpen }}
+          onPress={() => setFiltersOpen((value) => !value)}
+          style={({ pressed }) => [s.row, { minHeight: 44, borderTopWidth: 1, borderColor: colors.line, paddingTop: spacing.sm, opacity: pressed ? 0.7 : 1 }]}
+        >
+          <Icon name="SlidersHorizontal" size={20} />
+          <T type="bold" color={colors.brand} style={{ flex: 1 }}>
+            {filtersOpen ? 'Ocultar filtros' : 'Mais filtros'}{advancedCount ? ' (' + advancedCount + ')' : ''}
+          </T>
+          <View style={{ transform: [{ rotate: filtersOpen ? '-90deg' : '90deg' }] }}>
+            <Icon name="ChevronRight" size={18} />
+          </View>
+        </Pressable>
+        {!filtersOpen && advancedCount > 0 && (
+          <T type="small" color={colors.muted}>{[modalityLabel[mode], specialtyName || (specialty ? 'Especialidade selecionada' : '')].filter(Boolean).join(' · ')}</T>
+        )}
+        {filtersOpen && (
+          <View style={{ gap: spacing.sm }}>
+            <T type="bold">Modalidade</T>
+            <View style={s.wrap}>
+              {[['', 'Todas'], ...Object.entries(modalityLabel)].map(([v, label]) => (
+                <Chip key={label} active={mode === v} onPress={() => select(setMode, v)}>
+                  {label}
+                </Chip>
+              ))}
+            </View>
+            <T type="bold">Especialidade</T>
+            <Btn kind="outline" icon="SlidersHorizontal" onPress={() => setOpen(true)}>
+              {specialtyName || 'Todas as especialidades'}
+            </Btn>
+          </View>
+        )}
+        {hasFilters && <Btn kind="link" onPress={clearFilters}>Limpar filtros</Btn>}
       </Card>
       <Status result={result} />
       {result.meta && (
         <T type="small" color={colors.muted}>
-          {result.meta.total} resultado(s) com horário disponível
+          {result.meta.total === 1 ? '1 resultado com horário disponível' : result.meta.total + ' resultados com horário disponível'}
         </T>
       )}
     </View>
@@ -164,7 +219,9 @@ export default function Search({ navigation, route }) {
   return (
     <View style={s.page}>
       <FlatList
+        ref={list}
         keyboardShouldPersistTaps="handled"
+        contentInsetAdjustmentBehavior="automatic"
         contentContainerStyle={s.content}
         data={result.data || []}
         keyExtractor={(i) => i.professional.id + i.clinic.id}
@@ -184,10 +241,10 @@ export default function Search({ navigation, route }) {
                 Página {page} de {total}
               </T>
               <View style={s.row}>
-                <Btn kind="outline" disabled={page <= 1} onPress={() => setPage(page - 1)}>
+                <Btn kind="outline" disabled={page <= 1} onPress={() => changePage(page - 1)}>
                   Anterior
                 </Btn>
-                <Btn kind="outline" disabled={page >= total} onPress={() => setPage(page + 1)}>
+                <Btn kind="outline" disabled={page >= total} onPress={() => changePage(page + 1)}>
                   Próxima
                 </Btn>
               </View>
