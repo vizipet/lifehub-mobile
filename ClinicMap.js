@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ActivityIndicator, View } from 'react-native';
+import { ActivityIndicator, Pressable, View } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { Btn, Icon, T, colors, spacing } from './ui';
 
@@ -39,12 +39,11 @@ export default function ClinicMap({ name, latitude, longitude, onDirections, dir
     );
   }
 
-  const actionStyle = { flexGrow: 1, flexShrink: 1, flexBasis: 120 };
   return (
-    <View style={{ borderWidth: 1, borderColor: colors.line, borderRadius: 12,
-      backgroundColor: colors.card, overflow: 'hidden' }}>
-      {expanded ? (
-        <View style={{ height: 180, width: '100%', backgroundColor: colors.soft }}>
+    <View style={{ gap: spacing.sm }}>
+      {expanded && (
+        <View style={{ height: 180, width: '100%', borderRadius: 10, overflow: 'hidden',
+          backgroundColor: colors.soft }}>
             <WebView
               key={uri}
               source={{ uri }}
@@ -72,30 +71,38 @@ export default function ClinicMap({ name, latitude, longitude, onDirections, dir
               }}
             />
         </View>
-      ) : (
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm,
-          backgroundColor: colors.soft, padding: spacing.md }}>
-          <View style={{ width: 40, height: 40, flexShrink: 0, borderRadius: 10,
-            backgroundColor: colors.card, alignItems: 'center', justifyContent: 'center' }}>
-            <Icon name={error ? 'CircleAlert' : 'MapPin'} size={22} color={error ? colors.danger : colors.brand} />
-          </View>
-          <View style={{ flex: 1, minWidth: 0, gap: spacing.xs }}>
-            <T type="bold">{error ? 'Mapa indisponível' : 'Mapa da clínica'}</T>
-            <T type="small" color={colors.muted}>
-              {error ? 'Tente novamente ou use as rotas.' : 'OpenStreetMap externo · recebe seu IP.'}
-            </T>
-          </View>
-        </View>
       )}
-      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm,
-        padding: spacing.sm, borderTopWidth: 1, borderColor: colors.line }}>
-        <Btn kind="outline" style={actionStyle} onPress={toggleMap}>
-          {expanded ? 'Ocultar mapa' : error ? 'Tentar novamente' : 'Mostrar mapa'}
-        </Btn>
-        <Btn icon="Navigation" style={actionStyle} disabled={directionsBusy} onPress={onDirections}>
-          Como chegar
-        </Btn>
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between',
+        alignItems: 'center', columnGap: spacing.md, rowGap: spacing.xs }}>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityState={{ expanded }}
+          onPress={toggleMap}
+          style={({ pressed }) => ({ minHeight: 44, maxWidth: '100%', flexDirection: 'row',
+            alignItems: 'center', gap: spacing.xs, opacity: pressed ? 0.65 : 1 })}
+        >
+          <Icon name="MapPin" size={17} />
+          <T type="bold" color={colors.brand} style={{ flexShrink: 1 }}>
+            {expanded ? 'Ocultar mapa' : error ? 'Tentar novamente' : 'Mostrar mapa'}
+          </T>
+        </Pressable>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityState={{ disabled: directionsBusy }}
+          disabled={directionsBusy}
+          onPress={onDirections}
+          style={({ pressed }) => ({ minHeight: 44, maxWidth: '100%', flexDirection: 'row',
+            alignItems: 'center', gap: spacing.xs, opacity: directionsBusy ? 0.5 : pressed ? 0.65 : 1 })}
+        >
+          <Icon name="Navigation" size={17} />
+          <T type="bold" color={colors.brand} style={{ flexShrink: 1 }}>Como chegar</T>
+        </Pressable>
       </View>
+      {!expanded && (
+        <T type="small" color={error ? colors.danger : colors.muted}>
+          {error ? 'Mapa indisponível. Tente novamente.' : 'Ao abrir, o OpenStreetMap recebe seu IP.'}
+        </T>
+      )}
     </View>
   );
 }
