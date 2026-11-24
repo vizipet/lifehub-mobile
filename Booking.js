@@ -118,10 +118,13 @@ export default function Doctor({ route, navigation }) {
                 <T type="bold" style={{ flex: 1 }}>{c.name}</T>
               </View>
               <T type="small" color={colors.muted}>{[c.address, c.neighborhood, c.city].filter(Boolean).join(' · ')}</T>
-              <ClinicMap name={c.name} latitude={c.latitude} longitude={c.longitude} />
-              <Btn kind="link" icon="Navigation" onPress={() => openMap(c)}>
-                Como chegar
-              </Btn>
+              <ClinicMap
+                name={c.name}
+                latitude={c.latitude}
+                longitude={c.longitude}
+                onDirections={() => openMap(c)}
+                directionsBusy={maps.busy}
+              />
             </Card>
           ))}
           <Notice error>{maps.error}</Notice>
