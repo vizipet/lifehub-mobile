@@ -16,9 +16,12 @@ export function PatientAvatar({ patient, name, size = 48 }) {
     return <Avatar name={patient?.name || name || ''} size={size} round />;
   }
   return (
-    <Image source={{ uri: 'data:image/jpeg;base64,' + base64 }}
-      style={{ width: size, height: size, borderRadius: size / 2, backgroundColor: colors.soft, flexShrink: 0 }}
-      resizeMode="cover" accessible={false} onError={() => setFailed(key)} />
+    <View style={{ width: size, height: size, borderRadius: size / 2, borderWidth: 2,
+      borderColor: colors.brand, padding: 2, backgroundColor: colors.card, flexShrink: 0 }}>
+      <Image source={{ uri: 'data:image/jpeg;base64,' + base64 }}
+        style={{ width: size - 8, height: size - 8, borderRadius: (size - 8) / 2, backgroundColor: colors.soft }}
+        resizeMode="cover" accessible={false} onError={() => setFailed(key)} />
+    </View>
   );
 }
 
@@ -89,7 +92,10 @@ export function PatientPhotoEditor({ patient, onClose, onChanged }) {
     <Sheet visible={true} title={patient.isHolder ? 'Minha foto de perfil' : 'Foto do dependente'}
       onClose={() => { if (!action.busy) onClose(); }}>
       <View style={{ alignItems: 'center', gap: spacing.sm }}>
-        {draft ? <Image source={{ uri: draft.uri }} style={{ width: 112, height: 112, borderRadius: 56 }} resizeMode="cover" />
+        {draft ? <View style={{ width: 112, height: 112, borderRadius: 56, borderWidth: 2,
+          borderColor: colors.brand, padding: 2, backgroundColor: colors.card }}>
+          <Image source={{ uri: draft.uri }} style={{ width: 104, height: 104, borderRadius: 52 }} resizeMode="cover" />
+        </View>
           : <PatientAvatar patient={patient} size={112} />}
         <T type="heading" style={{ textAlign: 'center' }}>{patient.name}</T>
         <T type="small" color={colors.muted} style={{ textAlign: 'center' }}>Foto opcional, visível somente na sua conta.</T>
