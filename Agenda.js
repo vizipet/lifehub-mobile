@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { FlatList, View } from 'react-native';
 import { useSession, useData, useAction } from './api';
 import { PatientAvatar } from './PatientPhoto';
+import Teleconsultation from './Teleconsultation';
 import { T, Card, Btn, Chip, Status, Sheet, Notice, LabelRow, RadioOption, StatusPill, colors, s } from './ui';
 import {
   modalityLabel,
@@ -63,6 +64,7 @@ export function AppointmentCard({ item: a, onCancel, onRevokePhoto, patient }) {
       </LabelRow>
       <T type="small">{money(a.servicePriceCentsSnapshot)}</T>
       {a.cancellationReason && <T color={colors.danger}>Motivo: {a.cancellationReason}</T>}
+      {remote && confirmed && <Teleconsultation appointment={a} />}
       {onRevokePhoto && a.photoShared && confirmed && Date.parse(a.slot.endsAt) > Date.now() && (
         <Btn kind="link" icon="ShieldCheck" onPress={() => onRevokePhoto(a)}>Parar de compartilhar foto</Btn>
       )}

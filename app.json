@@ -5,7 +5,11 @@
     "version": "1.0.0",
     "userInterfaceStyle": "light",
     "android": {
-      "package": "br.lifehub.academico"
+      "package": "br.lifehub.academico",
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "plugins": [
       "expo-secure-store",
@@ -17,6 +21,12 @@
           "microphonePermission": false
         }
       ]
-    ]
+    ],
+    "ios": {
+      "infoPlist": {
+        "NSCameraUsageDescription": "A câmera é usada para a teleconsulta.",
+        "NSMicrophoneUsageDescription": "O microfone é usado para a teleconsulta."
+      }
+    }
   }
 }
