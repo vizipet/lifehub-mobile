@@ -182,5 +182,18 @@ export function createSessionController({ storage, request, publish }) {
       return result;
     }
   }
-  return { start, end, restore, call };
+  async function updateName(name) {
+    const epoch = revision;
+    const owner = auth?.user?.id;
+    const { data } = await call('/users/me', { method: 'PATCH', body: { name } });
+    check(epoch);
+    if (!owner || data?.id !== owner || auth?.user?.id !== owner || typeof data.name !== 'string') {
+      throw new Error('Resposta de perfil inválida.');
+    }
+    // Update the in-memory profile without touching credentials or navigation.
+    auth = { ...auth, user: { ...auth.user, ...data } };
+    publish({ ...closed, user: auth.user });
+    return auth.user;
+  }
+  return { start, end, restore, call, updateName };
 }

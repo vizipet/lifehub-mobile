@@ -1,38 +1,78 @@
 import React, { useState } from 'react';
 import legal from './legal.json';
 import { PatientAvatar, PatientPhotoEditor } from './PatientPhoto';
-import { Linking, View, useWindowDimensions } from 'react-native';
+import { Linking, Pressable, View, useWindowDimensions } from 'react-native';
 import { useSession, useData, useAction } from './api';
-import { T, Page, Card, Btn, Notice, Status, Avatar, Check, LabelRow, Sheet, s, colors, spacing } from './ui';
+import { T, Page, Card, Btn, Notice, Status, Avatar, Check, LabelRow, Sheet, Field, Icon, s, colors, spacing } from './ui';
 import { dateTime, dateShort, formatNotificationMessage } from './format';
 export function Profile({ navigation }) {
   const [privacyOpen, setPrivacyOpen] = useState(false);
   const [photoOpen, setPhotoOpen] = useState(false);
+  const [nameOpen, setNameOpen] = useState(false);
+  const [nameDraft, setNameDraft] = useState('');
+  const nameAction = useAction();
   const { width, fontScale } = useWindowDimensions();
-  const { user, end, large, toggleSize, call } = useSession(),
+  const { user, end, large, toggleSize, call, updateName } = useSession(),
     patients = useData('/patients'),
     prefs = useData('/privacy/notification-preferences'),
     action = useAction();
   const holder = patients.data?.find(p => p.isHolder);
   const stacked = width < 360 || fontScale * (large ? 1.16 : 1) > 1.3;
+  function openName() {
+    nameAction.clear();
+    setNameDraft(user.name);
+    setNameOpen(true);
+  }
+  function saveName() {
+    nameAction.run(async () => {
+      const name = nameDraft.trim();
+      if (name.length < 3 || name.length > 120) throw Error('Informe um nome entre 3 e 120 caracteres.');
+      await updateName(name);
+      patients.reload();
+      setNameOpen(false);
+    });
+  }
   return (
     <Page>
       <T type="title">Meu perfil</T>
       <Card>
         <View style={[s.row, stacked && { flexDirection: 'column', alignItems: 'flex-start' }]}>
-          <PatientAvatar patient={holder} name={user.name} size={72} />
+          <Pressable accessibilityRole="button" accessibilityLabel={holder?.photoVersion ? 'Alterar foto de perfil' : 'Adicionar foto de perfil'}
+            accessibilityState={{ disabled: !holder }} disabled={!holder}
+            onPress={() => setPhotoOpen(true)}
+            style={({ pressed }) => ({ width: 72, height: 72, opacity: !holder ? 0.6 : pressed ? 0.8 : 1 })}>
+            <PatientAvatar patient={holder} name={user.name} size={72} />
+            <View pointerEvents="none" style={{ position: 'absolute', right: -2, bottom: -2,
+              width: 25, height: 25, borderRadius: 12.5, backgroundColor: colors.brand,
+              borderColor: colors.card, borderWidth: 2, alignItems: 'center', justifyContent: 'center' }}>
+              <Icon name="Pencil" color="white" size={12} />
+            </View>
+          </Pressable>
           <View style={{ flex: stacked ? undefined : 1, minWidth: 0, alignSelf: 'stretch', justifyContent: 'center' }}>
-            <T type="heading">{user.name}</T>
+            <Pressable accessibilityRole="button" accessibilityLabel="Editar nome completo" onPress={openName}
+              style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', minHeight: 44, gap: spacing.sm, opacity: pressed ? 0.75 : 1 })}>
+              <T type="heading" style={{ flex: 1 }}>{user.name}</T>
+              <Icon name="Pencil" size={17} />
+            </Pressable>
           </View>
         </View>
         <View style={{ paddingTop: spacing.sm, borderTopWidth: 1, borderTopColor: colors.line }}>
           <T type="small" color={colors.muted} selectable>{user.email}</T>
         </View>
-        <Btn kind="outline" icon="Pencil" disabled={!holder} onPress={() => setPhotoOpen(true)}>
-          {holder?.photoVersion ? 'Alterar foto de perfil' : 'Adicionar foto de perfil'}
-        </Btn>
+        {!!patients.error && <Notice error>{patients.error}</Notice>}
+        {!!patients.error && <Btn kind="link" onPress={patients.reload}>Tentar novamente</Btn>}
       </Card>
       {photoOpen && !!holder && <PatientPhotoEditor patient={holder} onClose={() => setPhotoOpen(false)} onChanged={patients.reload} />}
+      <Sheet visible={nameOpen} title="Editar nome completo" onClose={() => { if (!nameAction.busy) setNameOpen(false); }}>
+        <T type="small" color={colors.muted}>Informe seu nome completo conforme o documento de identificação.</T>
+        <Field label="Nome completo" value={nameDraft} onChangeText={setNameDraft}
+          autoCapitalize="words" maxLength={120} editable={!nameAction.busy} />
+        <Notice error>{nameAction.error}</Notice>
+        <Btn disabled={nameAction.busy || nameDraft.trim().length < 3 || nameDraft.trim() === user.name} onPress={saveName}>
+          {nameAction.busy ? 'Salvando…' : 'Salvar nome'}
+        </Btn>
+        <Btn kind="link" disabled={nameAction.busy} onPress={() => setNameOpen(false)}>Cancelar</Btn>
+      </Sheet>
       <Btn kind="outline" icon="Users" onPress={() => navigation.navigate('Dependentes')}>
         Você e seus dependentes
       </Btn>
