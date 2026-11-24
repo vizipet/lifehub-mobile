@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { FlatList, View } from 'react-native';
 import { useSession, useData, useAction } from './api';
+import { PatientAvatar } from './PatientPhoto';
 import { T, Card, Btn, Chip, Status, Sheet, Notice, LabelRow, RadioOption, StatusPill, colors, s } from './ui';
 import {
   modalityLabel,
@@ -15,7 +16,7 @@ const reasons = [
   'Já me sinto melhor',
   'Outro motivo',
 ];
-export function AppointmentCard({ item: a, onCancel }) {
+export function AppointmentCard({ item: a, onCancel, patient }) {
   const start = a.slot.startsAt,
     remote = a.serviceModalitySnapshot === 'REMOTE',
     confirmed = a.status === 'CONFIRMED';
@@ -47,9 +48,10 @@ export function AppointmentCard({ item: a, onCancel }) {
       <LabelRow icon="Clock">
         {dateLong(start)} · {time(start)}
       </LabelRow>
-      <LabelRow icon="User">
-        {a.patient.name} · {relationshipLabel[a.patient.relationship]}
-      </LabelRow>
+      <View style={s.row}>
+        <PatientAvatar patient={patient} name={a.patient.name} size={32} />
+        <T style={{ flex: 1 }}>{a.patient.name} · {relationshipLabel[a.patient.relationship]}</T>
+      </View>
       <LabelRow icon={remote ? 'Video' : 'MapPin'}>
         {[
           modalityLabel[a.serviceModalitySnapshot],
@@ -74,6 +76,7 @@ export default function Agenda({ navigation }) {
     [target, setTarget] = useState(null),
     [reason, setReason] = useState(''),
     [message, setMessage] = useState('');
+  const patients = useData('/patients');
   const result = useData('/appointments?view=' + view),
     { call } = useSession(),
     action = useAction();
@@ -129,7 +132,7 @@ export default function Agenda({ navigation }) {
             <Status result={result} />
           </View>
         }
-        renderItem={({ item }) => <AppointmentCard item={item} onCancel={open} />}
+        renderItem={({ item }) => <AppointmentCard item={item} onCancel={open} patient={patients.data?.find(p => p.id === item.patientId || p.id === item.patient?.id)} />}
         ListEmptyComponent={
           result.data && (
             <Card>

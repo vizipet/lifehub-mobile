@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View } from 'react-native';
 import { useSession, useData, useAction } from './api';
+import { PatientAvatar, PatientPhotoEditor } from './PatientPhoto';
 import {
   Page,
   T,
@@ -33,7 +34,8 @@ export default function Family() {
   const [edit, setEdit] = useState(null),
     [remove, setRemove] = useState(null),
     [form, setForm] = useState(empty),
-    [message, setMessage] = useState('');
+    [message, setMessage] = useState(''),
+    [photoPatient, setPhotoPatient] = useState(null);
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
   function open(item) {
     action.clear();
@@ -104,7 +106,7 @@ export default function Family() {
       {list.data?.map((p) => (
         <Card key={p.id}>
           <View style={s.row}>
-            <Avatar name={p.name} />
+            <PatientAvatar patient={p} size={64} />
             <View style={{ flex: 1 }}>
               <T type="heading">{p.name}</T>
               <T>
@@ -117,6 +119,9 @@ export default function Family() {
           </T>
           <T type="small">CPF: {p.cpfMasked || 'não informado'}</T>
           <View style={s.wrap}>
+            <Btn kind="outline" icon="Pencil" onPress={() => setPhotoPatient(p)}>
+              {p.photoVersion ? 'Alterar foto' : 'Adicionar foto'}
+            </Btn>
             <Btn kind="outline" icon="Pencil" onPress={() => open(p)}>
               Editar
             </Btn>
@@ -134,6 +139,7 @@ export default function Family() {
           </View>
         </Card>
       ))}
+      {!!photoPatient && <PatientPhotoEditor patient={photoPatient} onClose={() => setPhotoPatient(null)} onChanged={list.reload} />}
       <Sheet
         visible={edit !== null}
         title={edit === 'new' ? 'Adicionar dependente' : 'Editar paciente'}

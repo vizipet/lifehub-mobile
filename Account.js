@@ -1,22 +1,26 @@
 import React, { useState } from 'react';
 import legal from './legal.json';
+import { PatientAvatar, PatientPhotoEditor } from './PatientPhoto';
 import { Linking, View, useWindowDimensions } from 'react-native';
 import { useSession, useData, useAction } from './api';
 import { T, Page, Card, Btn, Notice, Status, Avatar, Check, LabelRow, Sheet, s, colors, spacing } from './ui';
 import { dateTime, dateShort, formatNotificationMessage } from './format';
 export function Profile({ navigation }) {
   const [privacyOpen, setPrivacyOpen] = useState(false);
+  const [photoOpen, setPhotoOpen] = useState(false);
   const { width, fontScale } = useWindowDimensions();
   const { user, end, large, toggleSize, call } = useSession(),
+    patients = useData('/patients'),
     prefs = useData('/privacy/notification-preferences'),
     action = useAction();
+  const holder = patients.data?.find(p => p.isHolder);
   const stacked = width < 360 || fontScale * (large ? 1.16 : 1) > 1.3;
   return (
     <Page>
       <T type="title">Meu perfil</T>
       <Card>
         <View style={[s.row, stacked && { flexDirection: 'column', alignItems: 'flex-start' }]}>
-          <Avatar name={user.name} size={48} round />
+          <PatientAvatar patient={holder} name={user.name} size={72} />
           <View style={{ flex: stacked ? undefined : 1, minWidth: 0, alignSelf: 'stretch', justifyContent: 'center' }}>
             <T type="heading">{user.name}</T>
           </View>
@@ -24,7 +28,11 @@ export function Profile({ navigation }) {
         <View style={{ paddingTop: spacing.sm, borderTopWidth: 1, borderTopColor: colors.line }}>
           <T type="small" color={colors.muted} selectable>{user.email}</T>
         </View>
+        <Btn kind="outline" icon="Pencil" disabled={!holder} onPress={() => setPhotoOpen(true)}>
+          {holder?.photoVersion ? 'Alterar foto de perfil' : 'Adicionar foto de perfil'}
+        </Btn>
       </Card>
+      {photoOpen && !!holder && <PatientPhotoEditor patient={holder} onClose={() => setPhotoOpen(false)} onChanged={patients.reload} />}
       <Btn kind="outline" icon="Users" onPress={() => navigation.navigate('Dependentes')}>
         Você e seus dependentes
       </Btn>

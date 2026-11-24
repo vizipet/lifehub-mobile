@@ -16,17 +16,17 @@ export function apiBase() {
   // Android via USB: adb reverse tcp:3000 tcp:3000.
   return 'http://127.0.0.1:3000/api/v1';
 }
-export async function request(path, { method = 'GET', token, body, key, signal } = {}) {
+export async function request(path, { method = 'GET', token, body, key, signal, multipart = false } = {}) {
   const headers = { Accept: 'application/json' };
   if (token) headers.Authorization = 'Bearer ' + token;
-  if (body !== undefined) headers['Content-Type'] = 'application/json';
+  if (body !== undefined && !multipart) headers['Content-Type'] = 'application/json';
   if (key) headers['Idempotency-Key'] = key;
   let response;
   try {
     response = await fetch(apiBase() + path, {
       headers,
       method,
-      body: JSON.stringify(body),
+      body: multipart ? body : JSON.stringify(body),
       signal,
     });
   } catch (err) {

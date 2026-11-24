@@ -8,7 +8,15 @@
       "package": "br.lifehub.academico"
     },
     "plugins": [
-      "expo-secure-store"
+      "expo-secure-store",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "O LifeHub usa a galeria para escolher sua foto de perfil.",
+          "cameraPermission": "O LifeHub usa a câmera para tirar sua foto de perfil.",
+          "microphonePermission": false
+        }
+      ]
     ]
   }
 }

@@ -5,6 +5,7 @@ import { Page, Card, T, Btn, Status, Icon, colors, s, spacing } from './ui';
 import { todayKey, firstName } from './format';
 import { ProviderCard } from './Search';
 import { AppointmentCard } from './Agenda';
+import { PatientAvatar } from './PatientPhoto';
 const shortcuts = [
   ['Clock', 'Consulta hoje', 'Horários livres ainda hoje', 'Buscar'],
   ['Search', 'Buscar médico', 'Por especialidade ou nome', 'Buscar'],
@@ -15,6 +16,7 @@ const shortcuts = [
 export default function Home({ navigation }) {
   const { width, fontScale } = useWindowDimensions();
   const { user, large } = useSession(),
+    patients = useData('/patients'),
     next = useData('/appointments?view=upcoming'),
     soon = useData('/search/providers?date=' + todayKey() + '&limit=3');
   const singleColumn = width < 340 || fontScale * (large ? 1.16 : 1) > 1.35;
@@ -23,7 +25,10 @@ export default function Home({ navigation }) {
   return (
     <Page>
       <View style={s.hero}>
-        <T color="white">Olá, {firstName(user.name)}!</T>
+        <View style={s.row}>
+          <PatientAvatar patient={patients.data?.find(p => p.isHolder)} name={user.name} size={48} />
+          <T color="white" style={{ flex: 1 }}>Olá, {firstName(user.name)}!</T>
+        </View>
         <T type="title" color="white">
           Precisa de uma consulta?
         </T>
@@ -69,7 +74,7 @@ export default function Home({ navigation }) {
       <Status result={next} />
       {next.data &&
         (next.data[0] ? (
-          <AppointmentCard item={next.data[0]} />
+          <AppointmentCard item={next.data[0]} patient={patients.data?.find(p => p.id === next.data[0].patientId || p.id === next.data[0].patient?.id)} />
         ) : (
           <Card>
             <T>Nenhuma consulta marcada.</T>

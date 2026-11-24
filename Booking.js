@@ -2,6 +2,7 @@ import React, { useContext, useEffect, useRef, useState } from 'react';
 import { AccessibilityInfo, Animated, Linking, Pressable, View, useWindowDimensions } from 'react-native';
 import { randomUUID } from 'expo-crypto';
 import ClinicMap from './ClinicMap';
+import { PatientAvatar } from './PatientPhoto';
 import { useSession, useAction, useData } from './api';
 import {
   T,
@@ -456,7 +457,7 @@ export function Review({ navigation, route }) {
                   },
                 ]}
               >
-                <Avatar name={p.name} size={40} round />
+                <PatientAvatar patient={p} size={40} />
                 <View style={{ flex: 1, minWidth: 0, gap: spacing.xs }}>
                   <T type="bold">{p.name}</T>
                   <T type="small" color={colors.muted}>
