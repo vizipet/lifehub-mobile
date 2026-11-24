@@ -586,6 +586,7 @@ export function Review({ navigation, route }) {
             </Pressable>
           )}
         </Card>
+        <T type="small" color={colors.muted}>Sem presença registrada até 30 minutos após o término previsto, a consulta será cancelada automaticamente.</T>
       </Page>
 
       <View style={{ backgroundColor: colors.card, borderTopWidth: 1, borderTopColor: colors.line }}>

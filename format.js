@@ -88,6 +88,7 @@ export const appointmentStatusLabel = {
   CONFIRMED: 'Confirmada',
   CANCELLED_BY_PATIENT: 'Cancelada pelo paciente',
   CANCELLED_BY_PROVIDER: 'Cancelada pelo médico',
+  CANCELLED_AUTOMATICALLY: 'Cancelada automaticamente',
   COMPLETED: 'Concluída',
 };
 export const onlyDigits = (value) => value.replace(/\D/g, '');

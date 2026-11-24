@@ -191,6 +191,7 @@ export function StatusPill({ status }) {
     CONFIRMED: ['#dceee3', '#216849'],
     CANCELLED_BY_PATIENT: ['#fbe6df', '#9a3024'],
     CANCELLED_BY_PROVIDER: ['#fbe6df', '#9a3024'],
+    CANCELLED_AUTOMATICALLY: ['#fbe6df', '#9a3024'],
     COMPLETED: ['#e0eafa', '#2b5797'],
   };
   const [backgroundColor, color] = palette[status] || [colors.soft, colors.muted];
