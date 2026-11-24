@@ -92,7 +92,7 @@
     },
     {
       "heading": false,
-      "text": "• Fotos de perfil: opcionais, do titular e dos dependentes, enviadas somente mediante escolha do responsável. São privadas e não são exibidas aos médicos. Podem ser substituídas ou removidas pelo titular a qualquer momento."
+      "text": "• Fotos de perfil: opcionais, do titular e dos dependentes, enviadas somente mediante escolha do responsável. São privadas e podem ser substituídas ou removidas pelo titular a qualquer momento. O compartilhamento com o médico depende de autorização opcional por consulta."
     },
     {
       "heading": false,
@@ -136,7 +136,7 @@
     },
     {
       "heading": false,
-      "text": "O médico que você escolheu vê apenas o nome e a idade do paciente e os dados da consulta. Ele não vê CPF, data de nascimento nem os demais dependentes. Não vendemos dados pessoais. O carregamento de mapas utiliza um serviço externo, descrito na seção 8."
+      "text": "O médico escolhido vê o nome e a idade do paciente e os dados da consulta. Se você autorizar separadamente ao agendar, poderá ver a foto de perfil atual (inclusive futuras substituições) até o fim previsto da consulta, enquanto estiver confirmada. Revogue essa autorização na agenda sem cancelar a consulta. Outros médicos não têm acesso à foto. Ele não vê CPF, data de nascimento nem os demais dependentes. Não vendemos dados pessoais. O carregamento de mapas utiliza um serviço externo, descrito na seção 8."
     },
     {
       "heading": true,

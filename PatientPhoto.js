@@ -156,7 +156,7 @@ export function PatientPhotoEditor({ patient, onClose, onChanged }) {
                 <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: spacing.sm }}>
                   <Icon name="ShieldCheck" size={18} color={colors.muted} />
                   <T type="small" color={colors.muted} style={{ flex: 1 }}>
-                    Foto opcional, visível somente na sua conta.
+                    Foto privada e opcional. O médico só poderá vê-la se você autorizar nesta consulta.
                   </T>
                 </View>
                 {!!patient.photoVersion && (

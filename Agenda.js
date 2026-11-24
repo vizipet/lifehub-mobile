@@ -16,7 +16,7 @@ const reasons = [
   'Já me sinto melhor',
   'Outro motivo',
 ];
-export function AppointmentCard({ item: a, onCancel, patient }) {
+export function AppointmentCard({ item: a, onCancel, onRevokePhoto, patient }) {
   const start = a.slot.startsAt,
     remote = a.serviceModalitySnapshot === 'REMOTE',
     confirmed = a.status === 'CONFIRMED';
@@ -63,6 +63,9 @@ export function AppointmentCard({ item: a, onCancel, patient }) {
       </LabelRow>
       <T type="small">{money(a.servicePriceCentsSnapshot)}</T>
       {a.cancellationReason && <T color={colors.danger}>Motivo: {a.cancellationReason}</T>}
+      {onRevokePhoto && a.photoShared && confirmed && Date.parse(a.slot.endsAt) > Date.now() && (
+        <Btn kind="link" icon="ShieldCheck" onPress={() => onRevokePhoto(a)}>Parar de compartilhar foto</Btn>
+      )}
       {onCancel && confirmed && +stamp > Date.now() && (
         <Btn kind="danger" onPress={() => onCancel(a)}>
           Cancelar consulta
@@ -74,6 +77,7 @@ export function AppointmentCard({ item: a, onCancel, patient }) {
 export default function Agenda({ navigation }) {
   const [view, setView] = useState('upcoming'),
     [target, setTarget] = useState(null),
+    [photoTarget, setPhotoTarget] = useState(null),
     [reason, setReason] = useState(''),
     [message, setMessage] = useState('');
   const patients = useData('/patients');
@@ -87,6 +91,15 @@ export default function Agenda({ navigation }) {
   }
   function close() {
     if (!action.busy) setTarget(null);
+  }
+  function revokePhoto() {
+    if (!photoTarget) return;
+    action.run(async () => {
+      await call('/appointments/' + photoTarget.id + '/patient-photo', { method: 'DELETE' });
+      setPhotoTarget(null);
+      setMessage('Compartilhamento da foto revogado. Sua consulta continua agendada.');
+      result.reload();
+    });
   }
   function cancel() {
     action.run(async () => {
@@ -132,7 +145,7 @@ export default function Agenda({ navigation }) {
             <Status result={result} />
           </View>
         }
-        renderItem={({ item }) => <AppointmentCard item={item} onCancel={open} patient={patients.data?.find(p => p.id === item.patientId || p.id === item.patient?.id)} />}
+        renderItem={({ item }) => <AppointmentCard item={item} onCancel={open} onRevokePhoto={item => { action.clear(); setPhotoTarget(item); }} patient={patients.data?.find(p => p.id === item.patientId || p.id === item.patient?.id)} />}
         ListEmptyComponent={
           result.data && (
             <Card>
@@ -147,6 +160,12 @@ export default function Agenda({ navigation }) {
           )
         }
       />
+      <Sheet visible={!!photoTarget} title="Parar de compartilhar foto?" onClose={() => { if (!action.busy) setPhotoTarget(null); }}>
+        <T>O médico não poderá mais consultar a foto do paciente nesta consulta. Seu agendamento continuará válido.</T>
+        <Notice error>{action.error}</Notice>
+        <Btn kind="destructive" disabled={action.busy} onPress={revokePhoto}>Revogar autorização</Btn>
+        <Btn kind="outline" disabled={action.busy} onPress={() => setPhotoTarget(null)}>Voltar</Btn>
+      </Sheet>
       <Sheet visible={!!target} title="Cancelar consulta?" onClose={close}>
         {target && (
           <T>

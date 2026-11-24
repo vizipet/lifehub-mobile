@@ -386,7 +386,8 @@ export function Review({ navigation, route }) {
     { call } = useSession(),
     action = useAction();
   const [chosen, setChosen] = useState(null),
-    [agreement, setAgreement] = useState(false);
+    [agreement, setAgreement] = useState(false),
+    [photoPatient, setPhotoPatient] = useState(null);
   const keys = useRef(new Map());
   const person =
     patients.data?.find((p) => p.id === chosen) ||
@@ -394,17 +395,20 @@ export function Review({ navigation, route }) {
     patients.data?.[0];
   function confirm() {
     if (!person || !agreement) return;
+    const sharePatientPhoto = Boolean(person.photoVersion && photoPatient === person.id);
+    const attempt = person.id + ':' + sharePatientPhoto;
     action.run(async () => {
-      if (!keys.current.has(person.id)) keys.current.set(person.id, randomUUID());
+      if (!keys.current.has(attempt)) keys.current.set(attempt, randomUUID());
       await call('/appointments', {
         method: 'POST',
-        key: keys.current.get(person.id),
+        key: keys.current.get(attempt),
         body: {
           patientId: person.id,
           professionalId: professional.id,
           clinicId: service.clinicId,
           serviceId: service.id,
           slotId: slot.id,
+          sharePatientPhoto,
         },
       });
       navigation.reset({
@@ -445,6 +449,7 @@ export function Review({ navigation, route }) {
                 onPress={() => {
                   setChosen(p.id);
                   setAgreement(false);
+                  setPhotoPatient(null);
                 }}
                 style={({ pressed }) => [
                   s.row,
@@ -531,7 +536,7 @@ export function Review({ navigation, route }) {
             <View style={{ flex: 1, minWidth: 0, gap: spacing.xs }}>
               <T type="bold">Privacidade do paciente</T>
               <T type="small" color={colors.muted} style={{ lineHeight: 20 * appScale }}>
-                O médico receberá o nome e a idade do paciente para o atendimento.
+                O médico receberá o nome e a idade do paciente. Compartilhar a foto é opcional.
               </T>
             </View>
           </View>
@@ -556,6 +561,30 @@ export function Review({ navigation, route }) {
             </View>
             <T style={{ flex: 1, lineHeight: 23 * appScale }}>{consentText}</T>
           </Pressable>
+          {!!person?.photoVersion && (
+            <Pressable accessibilityRole="checkbox"
+              accessibilityState={{ checked: photoPatient === person.id, disabled: action.busy }}
+              disabled={action.busy}
+              onPress={() => setPhotoPatient(value => value === person.id ? null : person.id)}
+              style={({ pressed }) => ({
+                flexDirection: 'row', alignItems: 'flex-start', gap: spacing.md,
+                minHeight: 48, padding: spacing.md, borderWidth: 1, borderRadius: 10,
+                borderColor: photoPatient === person.id ? colors.brand : colors.line,
+                backgroundColor: photoPatient === person.id || pressed ? colors.soft : colors.card,
+              })}>
+              <View style={{ width: 26, height: 26, borderRadius: 6, borderWidth: 1.5,
+                borderColor: colors.brand, backgroundColor: photoPatient === person.id ? colors.brand : colors.card,
+                alignItems: 'center', justifyContent: 'center' }}>
+                {photoPatient === person.id && <Icon name="Check" size={19} color="white" />}
+              </View>
+              <View style={{ flex: 1, gap: spacing.xs }}>
+                <T type="bold">Compartilhar foto (opcional)</T>
+                <T type="small" style={{ lineHeight: 20 * appScale }}>
+                  Autorizo o médico desta consulta a ver a foto atual do paciente, inclusive se for substituída, até o fim previsto do atendimento. Posso revogar na agenda.
+                </T>
+              </View>
+            </Pressable>
+          )}
         </Card>
       </Page>
 
