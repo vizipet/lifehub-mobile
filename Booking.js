@@ -2,7 +2,6 @@ import React, { useEffect, useRef, useState } from 'react';
 import { AccessibilityInfo, Animated, Linking, Pressable, View } from 'react-native';
 import { randomUUID } from 'expo-crypto';
 import ClinicMap from './ClinicMap';
-import { professionalBio } from './professionalBio';
 import { useSession, useAction, useData } from './api';
 import {
   T,
@@ -112,7 +111,7 @@ export default function Doctor({ route, navigation }) {
             {!!doc.bio?.trim() && (
               <View style={{ borderTopWidth: 1, borderColor: colors.line, paddingTop: spacing.md, gap: spacing.sm }}>
                 <T type="heading">Sobre o profissional</T>
-                <T>{professionalBio(doc.bio)}</T>
+                <T>{doc.bio}</T>
               </View>
             )}
           </Card>
