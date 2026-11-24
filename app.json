@@ -6,6 +6,9 @@
     "userInterfaceStyle": "light",
     "android": {
       "package": "br.lifehub.academico"
-    }
+    },
+    "plugins": [
+      "expo-secure-store"
+    ]
   }
 }

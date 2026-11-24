@@ -113,7 +113,7 @@ export function Login({ navigation, route }) {
         if (!login.trim() || !password) throw Error('Informe seu e-mail ou CPF e sua senha.');
         const { data } = await post('/auth/login', { login: login.trim(), password });
         if (data.user.role !== 'PATIENT') throw Error('Entre com uma conta de paciente.');
-        start(data);
+        await start(data);
       } catch (e) {
         if (!(await AccessibilityInfo.isReduceMotionEnabled().catch(() => true)))
           Animated.sequence(
@@ -208,7 +208,7 @@ export function Register({ navigation }) {
       });
       try {
         const { data } = await post('/auth/login', { login: email.trim(), password: pwd });
-        start(data);
+        await start(data);
       } catch {
         navigation.replace('Entrar', {
           email: email.trim(),

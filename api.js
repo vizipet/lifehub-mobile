@@ -1,5 +1,14 @@
-import React, { useCallback, useContext, useRef, useState } from 'react';
+import React, { useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
+import * as SecureStore from 'expo-secure-store';
+import { createSessionController } from './session';
+
+const SESSION_KEY = 'lifehub.refreshToken.v1';
+const secureStorage = {
+  read: () => SecureStore.getItemAsync(SESSION_KEY),
+  save: (token) => SecureStore.setItemAsync(SESSION_KEY, token, { keychainAccessible: SecureStore.WHEN_UNLOCKED_THIS_DEVICE_ONLY }),
+  remove: () => SecureStore.deleteItemAsync(SESSION_KEY),
+};
 
 export const Session = React.createContext(null);
 export const useSession = () => useContext(Session);
@@ -45,57 +54,14 @@ export async function request(path, { method = 'GET', token, body, key, signal }
   return data;
 }
 export function useAccount() {
-  const [user, changeUser] = useState(null);
-  const auth = useRef(null),
-    pending = useRef(null);
-  function start(data) {
-    auth.current = data;
-    changeUser(data.user);
+  const [state, setState] = useState({ user: null, restoring: true, restoreError: '' });
+  const controller = useRef(null);
+  if (!controller.current) {
+    controller.current = createSessionController({ storage: secureStorage, request, publish: setState });
   }
-  const end = useCallback(() => {
-    const old = auth.current;
-    auth.current = null;
-    pending.current = null;
-    changeUser(null);
-    if (old)
-      request('/auth/logout', { method: 'POST', body: { refreshToken: old.refreshToken } }).catch(
-        () => {},
-      );
-  }, []);
-  const call = useCallback(
-    async (path, options = {}) => {
-      const original = auth.current;
-      try {
-        return await request(path, { ...options, token: original?.accessToken });
-      } catch (e) {
-        if (e.status !== 401 || !original || options.signal?.aborted) throw e;
-        if (original === auth.current) {
-          if (!pending.current) {
-            const task = request('/auth/refresh', {
-              method: 'POST',
-              body: { refreshToken: original.refreshToken },
-            })
-              .then(({ data }) => {
-                if (auth.current === original) auth.current = { ...original, ...data };
-              })
-              .catch((err) => {
-                if (auth.current === original && err.status === 401) end();
-                throw err;
-              })
-              .finally(() => {
-                if (pending.current === task) pending.current = null;
-              });
-            pending.current = task;
-          }
-          await pending.current;
-        }
-        if (!auth.current || auth.current.user.id !== original.user.id) throw e;
-        return request(path, { ...options, token: auth.current.accessToken });
-      }
-    },
-    [end],
-  );
-  return { user, start, end, call };
+  const session = controller.current;
+  useEffect(() => { session.restore(); }, [session]);
+  return { ...state, ...session };
 }
 export function useData(path) {
   const { call } = useSession();

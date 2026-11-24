@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Pressable, StatusBar, View, useWindowDimensions } from 'react-native';
+import { ActivityIndicator, Pressable, StatusBar, View, useWindowDimensions } from 'react-native';
 import {
   NavigationContainer,
   TabRouter,
@@ -9,7 +9,7 @@ import {
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { SafeAreaProvider, SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAccount, useSession, Session } from './api';
-import { T, Logo, Icon, FontScale, colors, s, spacing } from './ui';
+import { T, Logo, Icon, Btn, FontScale, colors, s, spacing } from './ui';
 import { Welcome, Login, Register, Recovery } from './Auth';
 import Home from './Home';
 import Search from './Search';
@@ -193,6 +193,23 @@ export default function App() {
         <StatusBar barStyle="dark-content" />
         <Session.Provider value={{ ...account, large, toggleSize: () => setLarge((x) => !x) }}>
           <FontScale.Provider value={large ? 1.16 : 1}>
+            {account.restoring ? (
+              <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: spacing.xl, gap: spacing.lg }}>
+                <Logo width={180} />
+                {account.restoreError ? (
+                  <>
+                    <T color={colors.muted} style={{ textAlign: 'center' }}>{account.restoreError}</T>
+                    <Btn onPress={account.restore}>Tentar novamente</Btn>
+                    <Btn kind="link" onPress={account.end}>Sair da conta</Btn>
+                  </>
+                ) : (
+                  <>
+                    <ActivityIndicator color={colors.brand} accessibilityLabel="Restaurando sessão" />
+                    <T color={colors.muted}>Restaurando sua sessão…</T>
+                  </>
+                )}
+              </View>
+            ) : (
             <NavigationContainer>
               <Stack.Navigator
                 screenOptions={{
@@ -219,6 +236,7 @@ export default function App() {
                 )}
               </Stack.Navigator>
             </NavigationContainer>
+            )}
           </FontScale.Provider>
         </Session.Provider>
       </SafeAreaView>
