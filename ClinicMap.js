@@ -1,9 +1,62 @@
 import React, { useState } from 'react';
-import { ActivityIndicator, View } from 'react-native';
+import { ActivityIndicator, Linking, View } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { Btn, T, colors, spacing } from './ui';
 
 const MAP_ORIGIN = 'https://www.openstreetmap.org';
+// Compacta apenas o rodapé do mapa externo, mantendo crédito e links originais.
+const compactAttribution = `
+(function () {
+  if (location.origin !== 'https://www.openstreetmap.org' || location.pathname !== '/export/embed.html') return;
+  if (window.__lifehubAttribution) return;
+  window.__lifehubAttribution = true;
+
+  function compact() {
+    document.querySelectorAll('.maplibregl-ctrl-attrib-inner, .leaflet-control-attribution').forEach(function (footer) {
+      if (footer.querySelector('[data-lifehub-credit]')) return;
+      var links = Array.from(footer.querySelectorAll('a'));
+      var credit = links.find(function (link) {
+        return link.origin === location.origin && link.pathname === '/copyright';
+      });
+      if (!credit) return;
+      // Não compactar créditos de outros fornecedores ou camadas desconhecidas.
+      if (links.some(function (link) {
+        return link !== credit &&
+          !link.classList.contains('donate-attr') &&
+          !link.classList.contains('maplibregl-ctrl-attrib-report-link') &&
+          !link.pathname.startsWith('/fixthemap') &&
+          !link.pathname.endsWith('/Terms_of_Use') &&
+          link.hostname !== 'donate.openstreetmap.org';
+      })) return;
+
+      var original = Array.from(footer.childNodes);
+      var label = credit.cloneNode(true);
+      label.textContent = '© OpenStreetMap';
+      label.setAttribute('data-lifehub-credit', '1');
+      label.setAttribute('aria-label', 'Créditos e licença do OpenStreetMap');
+      var details = document.createElement('details');
+      details.style.cssText = 'display:inline-block;position:relative;margin-left:6px;vertical-align:baseline;';
+      var summary = document.createElement('summary');
+      summary.textContent = 'ⓘ';
+      summary.setAttribute('aria-label', 'Informações e links do mapa');
+      summary.style.cssText = 'display:inline;cursor:pointer;list-style:none;font-size:14px;';
+      var panel = document.createElement('div');
+      panel.style.cssText = 'position:absolute;bottom:100%;right:0;width:210px;max-width:75vw;white-space:normal;background:white;color:#25332e;padding:8px;border:1px solid #cdd6cc;border-radius:6px;z-index:10;line-height:1.5;';
+      original.forEach(function (node) { panel.appendChild(node); });
+      details.appendChild(summary);
+      details.appendChild(panel);
+      footer.appendChild(label);
+      footer.appendChild(details);
+      footer.style.fontSize = '12px';
+      footer.style.lineHeight = '18px';
+    });
+  }
+  compact();
+  new MutationObserver(compact).observe(document.body, { childList: true, subtree: true });
+})();
+true;
+`;
+
 function mapUrl(latitude, longitude) {
   const bbox = [longitude - 0.006, latitude - 0.004, longitude + 0.006, latitude + 0.004]
     .map((n) => n.toFixed(5)).join(',');
@@ -31,8 +84,17 @@ export default function ClinicMap({ name, latitude, longitude, onDirections, dir
               style={{ flex: 1, backgroundColor: colors.soft }}
               accessibilityLabel={'Mapa de ' + name}
               originWhitelist={['https://*', 'about:blank']}
-              onShouldStartLoadWithRequest={(request) => request.url === 'about:blank'
-                || request.url.startsWith(MAP_ORIGIN + '/export/embed.html?')}
+              injectedJavaScript={compactAttribution}
+              onShouldStartLoadWithRequest={(request) => {
+                if (request.url === 'about:blank' || request.url.startsWith(MAP_ORIGIN + '/export/embed.html?')) return true;
+                if (request.url === MAP_ORIGIN + '/copyright' ||
+                    request.url.startsWith(MAP_ORIGIN + '/fixthemap') ||
+                    request.url.startsWith('https://donate.openstreetmap.org/') ||
+                    request.url === 'https://wiki.osmfoundation.org/wiki/Terms_of_Use') {
+                  Linking.openURL(request.url).catch(() => {});
+                }
+                return false;
+              }}
               startInLoadingState
               renderLoading={() => (
                 <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.soft }}>
